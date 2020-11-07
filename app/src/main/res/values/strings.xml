@@ -1,0 +1,27 @@
+<resources>
+    <!-- Name App -->
+    <string name="app_name">Go4Lunch</string>
+
+    <!-- Maps -->
+    <string name="map_id">a01dd88fd83492e6</string>
+
+    <!-- Facebook Strings -->
+    <string name="facebook_application_id">973767119787700</string>
+    <string name="fb_login_protocol_scheme">fb973767119787700</string>
+
+    <!-- Twitter Strings -->
+    <string name="twitter_consumer_key" translatable="false">GTPYAz0NnSBFKQXJe5dpKYEWG</string>
+    <string name="twitter_consumer_secret" translatable="false">u1rv8KtiHGURApC5iA6EeTUqlWDe8VSXfjf8sxtXWDtxUijVR2</string>
+
+
+    <string name="title_activity_with_frag">MainActivity</string>
+    <string name="title_home">Carte</string>
+    <string name="title_dashboard">Liste</string>
+    <string name="title_notifications">Collègues</string>
+    <string name="rationale_ask_ok" />
+    <string name="rationale_ask_cancel" />
+    <string name="camera_and_location_rationale" />
+    <string name="search_hint">Search a Restaurant</string>
+
+
+</resources>
