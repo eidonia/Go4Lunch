@@ -23,5 +23,9 @@
     <string name="camera_and_location_rationale" />
     <string name="search_hint">Search a Restaurant</string>
 
+    <string name="title_restaurant">Restaurant Favoris</string>
+    <string name="title_settings">Paramètres</string>
+    <string name="title_disconnect">Déconnexion</string>
+
 
 </resources>

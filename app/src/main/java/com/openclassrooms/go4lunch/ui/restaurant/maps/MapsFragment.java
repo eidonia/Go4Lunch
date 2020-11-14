@@ -1,6 +1,7 @@
 package com.openclassrooms.go4lunch.ui.restaurant.maps;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -8,6 +9,8 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +33,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PointOfInterest;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
@@ -45,6 +49,8 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.FragmentMapsBinding;
+import com.openclassrooms.go4lunch.models.Restaurant;
+import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 
 import java.util.Arrays;
@@ -64,6 +70,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private Location location;
     private RestaurantViewModel restaurantViewModel;
 
+    @SuppressLint("MissingPermission")
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentMapsBinding.inflate(getLayoutInflater());
@@ -83,11 +90,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         LocationManager locationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            location = locationManager.getLastKnownLocation(provider);
-        }
+        location = locationManager.getLastKnownLocation(provider);
 
         binding.mapView.getMapAsync(this);
+
+        binding.btnMenu.setOnClickListener(v ->
+            ((ActivityWithFrag)getActivity()).openDrawer()
+        );
 
         return view;
     }
@@ -104,13 +113,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
         rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
         rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-        rlp.setMargins(0, 0, 0, 250);
+        rlp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, 0);
+        rlp.addRule(RelativeLayout.ALIGN_PARENT_START);
 
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 17.0f);
         googleMap.animateCamera(update);
         restaurantViewModel.getNearbyRestaurants("" + location.getLatitude() + "," + location.getLongitude(), 300);
-        restaurantViewModel.getRestaurants().observe(this, restaurants -> {
-            //create marker pour chaque restaurant
+        restaurantViewModel.getRestaurants().observe(getViewLifecycleOwner(), restaurants -> {
+            Log.d("here", "" + restaurants.size());
         });
 
         RectangularBounds bounds = RectangularBounds.newInstance(
@@ -118,24 +128,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                 getCoordinate(location.getLatitude(), location.getLongitude(), 300, 300)
         );
 
-        AutocompleteSupportFragment autoCompleteFragment = (AutocompleteSupportFragment) getChildFragmentManager().findFragmentById(R.id.completeSearch);
-        autoCompleteFragment.setLocationBias(bounds);
-        autoCompleteFragment.setCountry("FR");
-        autoCompleteFragment.setTypeFilter(TypeFilter.ESTABLISHMENT);
-        autoCompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ADDRESS_COMPONENTS, Place.Field.BUSINESS_STATUS, Place.Field.OPENING_HOURS, Place.Field.PHONE_NUMBER, Place.Field.PHOTO_METADATAS, Place.Field.RATING, Place.Field.WEBSITE_URI));
-        autoCompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+        binding.completeSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onPlaceSelected(@NonNull Place place) {
-                //Log.i("Kointe", "Place: " + place.getName() + ", " + ", " + place.getPhoneNumber() + ", " + place.getOpeningHours().getPeriods().get(2) + ", " + place.getPhotoMetadatas());
-                Log.i("Kointe", "Place: " + autoCompleteFragment);
-                Log.i("Kointe", "Place: " + googleMap);
-                CameraUpdate update = CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 17.0f);
-                googleMap.animateCamera(update);
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
             }
 
             @Override
-            public void onError(@NonNull Status status) {
-                Log.i("Kointe", "An error occurred: " + status);
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                restaurantViewModel.SearchRestaurant(s, bounds, placesClient, location.getLatitude(), location.getLongitude());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
             }
         });
 
@@ -148,7 +154,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
     }
 
-    public static com.google.android.gms.maps.model.LatLng getCoordinate(double lat0, double lng0, long dy, long dx) {
+    public static LatLng getCoordinate(double lat0, double lng0, long dy, long dx) {
         double lat = lat0 + (180 / Math.PI) * (dy / 6378137);
         double lng = lng0 + (180 / Math.PI) * (dx / 6378137) / Math.cos(lat0);
         return new com.google.android.gms.maps.model.LatLng(lat, lng);

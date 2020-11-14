@@ -23,6 +23,4 @@ public class MapRepository {
     public Observable<NearbyRestaurantResponse> getNearbyRestaurant(String location, int radius) {
         return googleMapService.getNearbyRestaurant(location, radius, "restaurant", API_KEY);
     }
-
-
 }

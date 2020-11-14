@@ -11,7 +11,7 @@ import java.util.Map;
 public class Restaurant {
 
     private String businessStatus;
-    //private Geometry geometry;
+    private Geometry geometry;
     private String icon;
     private String name;
     private OpeningHours openingHours;

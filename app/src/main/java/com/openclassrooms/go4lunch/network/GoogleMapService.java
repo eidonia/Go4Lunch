@@ -11,4 +11,7 @@ public interface GoogleMapService {
 
     @GET("nearbysearch/json")
     Observable<NearbyRestaurantResponse> getNearbyRestaurant(@Query("location") String location, @Query("radius") int radius, @Query("type") String type, @Query("key") String key);
+
+    @GET("nearbysearch/json")
+    Observable<NearbyRestaurantResponse> getSearchedRestaurant(@Query("location") String location, @Query("radius") int radius,@Query("input") String input, @Query("inputype") String inputype, @Query("type") String type, @Query("key") String key);
 }
