@@ -1,20 +1,17 @@
-package com.openclassrooms.go4lunch.models;
+package com.openclassrooms.go4lunch.models.nearby;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.transform.Result;
 
 public class NearbyRestaurantResponse {
 
     private List<Object> htmlAttributions;
-    private ArrayList<Restaurant> results;
+    private ArrayList<Result> results;
     private String status;
     private Map<String, Object> additionalProperties;
 
-    public NearbyRestaurantResponse(List<Object> htmlAttributions, ArrayList<Restaurant> results, String status, Map<String, Object> additionalProperties) {
+    public NearbyRestaurantResponse(List<Object> htmlAttributions, ArrayList<Result> results, String status, Map<String, Object> additionalProperties) {
         this.htmlAttributions = htmlAttributions;
         this.results = results;
         this.status = status;
@@ -29,11 +26,11 @@ public class NearbyRestaurantResponse {
         this.htmlAttributions = htmlAttributions;
     }
 
-    public ArrayList<Restaurant> getResults() {
+    public ArrayList<Result> getResults() {
         return results;
     }
 
-    public void setResults(ArrayList<Restaurant> results) {
+    public void setResults(ArrayList<Result> results) {
         this.results = results;
     }
 

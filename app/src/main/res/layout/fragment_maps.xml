@@ -25,7 +25,7 @@
 
             <ImageView
                 android:id="@+id/btnMenu"
-                android:src="@drawable/baseline_menu_black_24"
+                android:src="@drawable/ic_outline_menu_24"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 app:layout_constraintStart_toStartOf="parent"
