@@ -19,8 +19,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.storage.StorageReference;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ChangeNameBinding;
 import com.openclassrooms.go4lunch.databinding.ChangePictureBinding;
@@ -33,9 +31,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
 import dagger.hilt.android.AndroidEntryPoint;
 
 import static android.app.Activity.RESULT_OK;
@@ -45,11 +40,6 @@ public class SettingsFragment extends Fragment {
 
     private static final int GET_FROM_GALLERY = 1;
     private static final int GET_FROM_PICTURE = 2;
-    @Inject
-    @Named("users")
-    public DatabaseReference refUsers;
-    @Inject
-    public StorageReference storage;
     private RestaurantViewModel restaurantViewModel;
     private FragmentSettingsBinding binding;
     private FirebaseUser firebaseUser;
@@ -58,7 +48,6 @@ public class SettingsFragment extends Fragment {
     private ChangePictureBinding changePictureBinding;
     private User user;
     private Uri photoURI;
-    private String currentPhotoPath;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -146,10 +135,6 @@ public class SettingsFragment extends Fragment {
                 ".jpg",
                 storageDir
         );
-
-
-        currentPhotoPath = image.getAbsolutePath();
-
         return image;
     }
 

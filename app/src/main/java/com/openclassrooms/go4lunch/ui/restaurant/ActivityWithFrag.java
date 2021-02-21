@@ -1,17 +1,12 @@
 package com.openclassrooms.go4lunch.ui.restaurant;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Outline;
 import android.graphics.Rect;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,50 +19,32 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.work.BackoffPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.libraries.places.api.model.RectangularBounds;
-import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityWithFragBinding;
-import com.openclassrooms.go4lunch.databinding.DisconnectionDialogBinding;
 import com.openclassrooms.go4lunch.models.Restaurant;
 import com.openclassrooms.go4lunch.models.User;
-import com.openclassrooms.go4lunch.models.details.OpeningHours;
 import com.openclassrooms.go4lunch.models.details.Period;
-import com.openclassrooms.go4lunch.ui.MainActivity;
-import com.openclassrooms.go4lunch.ui.restaurant.maps.MapsFragment;
 import com.openclassrooms.go4lunch.ui.restaurant.workmates.UserListAdapter;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 import com.openclassrooms.go4lunch.worker.ChosenRestWorker;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -108,7 +85,7 @@ public class ActivityWithFrag extends AppCompatActivity {
         setContentView(binding.getRoot());
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
         restaurantViewModel.getRestaurants();
-        firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        firebaseUser = FirebaseAuth.getInstance().getCurrentUser(); //A METTRE DANS REPO
         adapter = new UserListAdapter(this, BSD_ADA);
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -149,6 +126,7 @@ public class ActivityWithFrag extends AppCompatActivity {
         Log.d("marker", "bottomsheetdialog");
         Log.d("listToHashMap", "" + restaurant.getOpeningHours());
         BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet);
+
         if (fragment.equals("list")) {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             binding.collapsedBottom.setVisibility(View.GONE);
@@ -202,7 +180,6 @@ public class ActivityWithFrag extends AppCompatActivity {
         binding.adress.setText(restaurant.getVicinity());
         restaurant.getActualStatus();
         if (restaurant.getOpeningHours().getOpenNow() && getTodayExist(restaurant)) {
-            Log.d("horaireRestau", " KOINKOINKOIN ");
         }
         Log.d("horaireRestau", " " + restaurant.getOpeningHours().getPeriods().get(3));
         if (!restaurant.getOpeningHours().getOpenNow()) {

@@ -2,7 +2,6 @@ package com.openclassrooms.go4lunch.ui.restaurant.maps;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -19,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -32,7 +30,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -52,7 +49,6 @@ import javax.inject.Named;
 import dagger.hilt.android.AndroidEntryPoint;
 
 import static android.content.Context.LOCATION_SERVICE;
-import static com.openclassrooms.go4lunch.utils.Constante.MAPS_FRAG;
 
 @AndroidEntryPoint
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
@@ -64,7 +60,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @Inject
     public Location location;
     private FragmentMapsBinding binding;
-    private FragmentActivity fragActivity;
     private RestaurantViewModel restaurantViewModel;
     private final HashMap<Marker, Restaurant> hashMap = new HashMap<>();
     private User user;
@@ -168,18 +163,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     }
 
-
-
-    public boolean containsRestaurant(final List<Restaurant> rest, Restaurant restaurant) {
-        boolean contains = false;
-        for (Restaurant item : rest) {
-            if (item.getPlaceId().equals(restaurant.getPlaceId())) {
-                contains = true;
-            }
-        }
-        return contains;
-    }
-
     @SuppressLint("MissingPermission")
     @Override
     public void onResume() {
@@ -196,12 +179,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     public void onDestroy() {
         super.onDestroy();
         binding.mapView.onDestroy();
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        fragActivity = (FragmentActivity) context;
-        super.onAttach(context);
     }
 
 

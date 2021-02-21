@@ -1,10 +1,5 @@
 package com.openclassrooms.go4lunch.ui;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -15,55 +10,44 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
-import android.view.View;
 
-import com.firebase.ui.auth.AuthMethodPickerLayout;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityMainBinding;
 import com.openclassrooms.go4lunch.event.ActivityFragEvent;
-import com.openclassrooms.go4lunch.models.User;
 import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
-import java.lang.reflect.Array;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.security.auth.callback.Callback;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import pub.devrel.easypermissions.PermissionRequest;
 
-import static com.openclassrooms.go4lunch.utils.Constante.NAME_PIC;
 import static com.openclassrooms.go4lunch.utils.Constante.RC_SIGN_IN;
-import static com.openclassrooms.go4lunch.utils.Constante.STORAGE_REF;
 
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks, LocationListener {
@@ -163,17 +147,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         String provider = locationManager.getBestProvider(criteria, true);
         location = locationManager.getLastKnownLocation(provider);
         //restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
-        handler = new Handler();
-        Runnable runnable = () -> {
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user != null) {
-                startActivity(new Intent(this, ActivityWithFrag.class));
-            }else {
-                connectFirebase();
-            }
-        };
-
-        handler.postDelayed(runnable, 3000);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            startActivity(new Intent(this, ActivityWithFrag.class));
+        } else {
+            connectFirebase();
+        }
     }
 
     @Override

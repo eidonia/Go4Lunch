@@ -15,6 +15,17 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        def secureProps = new Properties()
+        if (file("../secure.properties").exists()) {
+            file("../secure.properties")?.withInputStream { secureProps.load(it) }
+        }
+        buildConfigField("String", "API_KEY", (secureProps.getProperty("API_KEY") ?: "\"\""))
+
+        // To add your Maps API key to this project:
+        // 1. Create a file ./secure.properties
+        // 2. Add this line, where YOUR_API_KEY is your API key:
+        //        API_KEY=YOUR_API_KEY
     }
 
     buildFeatures {
