@@ -15,6 +15,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,8 +28,8 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 import dagger.hilt.InstallIn;
-import dagger.hilt.android.components.ApplicationComponent;
 import dagger.hilt.android.qualifiers.ApplicationContext;
+import dagger.hilt.components.SingletonComponent;
 import hu.akarnokd.rxjava3.retrofit.RxJava3CallAdapterFactory;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -35,7 +37,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static android.content.Context.LOCATION_SERVICE;
 
 @Module
-@InstallIn(ApplicationComponent.class)
+@InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
     @Provides
@@ -73,6 +75,18 @@ public class NetworkModule {
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         return locationManager.getLastKnownLocation(provider);
+    }
+
+    @Provides
+    @Singleton
+    public FirebaseStorage provideFirebaseStorage() {
+        return FirebaseStorage.getInstance("gs://go4lunch-8f1f6.appspot.com");
+    }
+
+    @Provides
+    @Singleton
+    public StorageReference provideStorageRef(FirebaseStorage storage) {
+        return storage.getReference();
     }
 
 }

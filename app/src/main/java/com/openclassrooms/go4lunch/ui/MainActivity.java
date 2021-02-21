@@ -34,11 +34,16 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.StorageReference;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityMainBinding;
+import com.openclassrooms.go4lunch.event.ActivityFragEvent;
 import com.openclassrooms.go4lunch.models.User;
 import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.lang.reflect.Array;
 import java.security.MessageDigest;
@@ -48,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.security.auth.callback.Callback;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -55,19 +61,23 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import pub.devrel.easypermissions.PermissionRequest;
 
+import static com.openclassrooms.go4lunch.utils.Constante.NAME_PIC;
 import static com.openclassrooms.go4lunch.utils.Constante.RC_SIGN_IN;
+import static com.openclassrooms.go4lunch.utils.Constante.STORAGE_REF;
 
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks, LocationListener {
 
     @Inject
+    @Named("users")
     public DatabaseReference refUsers;
+    @Inject
+    public StorageReference storage;
     private static final int RC_CAMERA_AND_LOCATION = 123;
     private RestaurantViewModel restaurantViewModel;
     private ActivityMainBinding binding;
     private Handler handler;
-    private String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
-    private int count = 0;
+    private final String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
     private Location location;
     private LocationManager locationManager;
 
@@ -129,46 +139,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             IdpResponse response = IdpResponse.fromResultIntent(data);
 
             if (resultCode == RESULT_OK) {
-                Log.d("connection", "Connexion");
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                Log.d("user", " " + user.getDisplayName());
-                addUser(user.getDisplayName(), user.getEmail(), user.getUid(), user.getPhotoUrl());
-                startActivity(new Intent(this, ActivityWithFrag.class));
+                restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getUid(), user.getPhotoUrl());
             } else {
                 Log.d("connection", "" + response.getError().getErrorCode());
             }
         }
-
     }
 
-    private void addUser(String displayName, String email, String uid, Uri photoUrl) {
-        refUsers.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.d("user", "Here");
-                //refUsers.push().setValue(new User(displayName, email, photoUrl.toString()));
-                count = 0;
-                for (DataSnapshot data : snapshot.getChildren()) {
-                    Log.d("data", " data: " + data.getValue().toString());
-                    if (data.child("name").getValue().toString().equals(displayName)) {
-                        Log.d("dataName", " dataName: " + data.child("name").toString() + " displayName: " + displayName);
-                        count++;
-                    }
-                }
-                if (count == 0) {
-                    refUsers.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).push().setValue(new User(displayName, email, photoUrl.toString(), null, null, false));
-                    HashMap<String, Object> addNewUser = new HashMap<>();
-                    addNewUser.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(displayName, email, photoUrl.toString(), null, null, false));
-                    refUsers.updateChildren(addNewUser);
-                }
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -183,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         location = locationManager.getLastKnownLocation(provider);
-        restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+        //restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
         handler = new Handler();
         Runnable runnable = () -> {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -198,6 +177,18 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     @Override
+    protected void onResume() {
+        EventBus.getDefault().register(this);
+        super.onResume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Override
     public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
             finish();
     }
@@ -205,5 +196,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @Override
     public void onLocationChanged(@NonNull Location location) {
 
+    }
+
+    @Subscribe
+    public void onLauchActivityFrag(ActivityFragEvent event) {
+        startActivity(new Intent(MainActivity.this, ActivityWithFrag.class));
     }
 }

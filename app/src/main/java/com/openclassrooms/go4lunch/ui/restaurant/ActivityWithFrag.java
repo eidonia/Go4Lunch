@@ -2,6 +2,7 @@ package com.openclassrooms.go4lunch.ui.restaurant;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -29,6 +30,10 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.work.BackoffPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DecodeFormat;
@@ -48,32 +53,52 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityWithFragBinding;
+import com.openclassrooms.go4lunch.databinding.DisconnectionDialogBinding;
 import com.openclassrooms.go4lunch.models.Restaurant;
 import com.openclassrooms.go4lunch.models.User;
+import com.openclassrooms.go4lunch.models.details.OpeningHours;
 import com.openclassrooms.go4lunch.models.details.Period;
+import com.openclassrooms.go4lunch.ui.MainActivity;
 import com.openclassrooms.go4lunch.ui.restaurant.maps.MapsFragment;
+import com.openclassrooms.go4lunch.ui.restaurant.workmates.UserListAdapter;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
+import com.openclassrooms.go4lunch.worker.ChosenRestWorker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+import static com.openclassrooms.go4lunch.utils.Constante.ADD_RESTAU;
+import static com.openclassrooms.go4lunch.utils.Constante.BSD_ADA;
+import static com.openclassrooms.go4lunch.utils.Constante.CHAN_RESTAU;
+import static com.openclassrooms.go4lunch.utils.Constante.DEL_RESTAU;
+import static com.openclassrooms.go4lunch.utils.Constante.FAV_RESTAU;
+import static com.openclassrooms.go4lunch.utils.Constante.UNFAV_RESTAU;
+
 @AndroidEntryPoint
-public class ActivityWithFrag extends AppCompatActivity{
+public class ActivityWithFrag extends AppCompatActivity {
 
     @Inject
+    @Named("users")
     public DatabaseReference refUsers;
+    @Inject
+    @Named("restaurants")
+    public DatabaseReference refRest;
     @Inject
     public Location location;
     private ActivityWithFragBinding binding;
     private RestaurantViewModel restaurantViewModel;
-    private Context context = this;
+    private final Context context = this;
     private FirebaseUser firebaseUser;
     private User user;
+    private UserListAdapter adapter;
+
 
     @SuppressLint("MissingPermission")
     @Override
@@ -82,26 +107,9 @@ public class ActivityWithFrag extends AppCompatActivity{
         binding = ActivityWithFragBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
+        restaurantViewModel.getRestaurants();
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        Query query = refUsers.child(firebaseUser.getUid());
-
-        query.addValueEventListener(new ValueEventListener() {
-
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                user = snapshot.getValue(User.class);
-                //setMarkers()
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-
-        restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
-
-
+        adapter = new UserListAdapter(this, BSD_ADA);
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(binding.navView, navController);
@@ -111,17 +119,25 @@ public class ActivityWithFrag extends AppCompatActivity{
         NavigationView navView = findViewById(R.id.navBar);
         NavigationUI.setupWithNavController(navView, navDrawer);
 
-        View headerView = navView.getHeaderView(0);
-        ImageView imgUser = headerView.findViewById(R.id.imgUser);
-        TextView userName = headerView.findViewById(R.id.userName);
+        ChosenRestWorker.startWorker(this);
 
-        Glide.with(this).load(firebaseUser.getPhotoUrl())
-                .apply(new RequestOptions()
-                .circleCrop()
-                .format(DecodeFormat.PREFER_ARGB_8888)
-                .override(Target.SIZE_ORIGINAL))
-                .into(imgUser);
-        userName.setText(firebaseUser.getDisplayName());
+        restaurantViewModel.getUser(firebaseUser.getUid()).observe(this, userFirebase -> {
+            user = userFirebase;
+
+            View headerView = navView.getHeaderView(0);
+            ImageView imgUser = headerView.findViewById(R.id.imgUser);
+            TextView userName = headerView.findViewById(R.id.userName);
+            TextView userEmail = headerView.findViewById(R.id.userEmail);
+
+            Glide.with(this).load(user.getPhotoUrl())
+                    .apply(new RequestOptions()
+                            .circleCrop()
+                            .format(DecodeFormat.PREFER_ARGB_8888)
+                            .override(Target.SIZE_ORIGINAL))
+                    .into(imgUser);
+            userName.setText(user.getName());
+            userEmail.setText(user.getEmail());
+        });
 
     }
 
@@ -148,12 +164,8 @@ public class ActivityWithFrag extends AppCompatActivity{
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 Log.d("newState", "" + newState);
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                    binding.collapsedBottom.setVisibility(View.GONE);
-                    binding.expandedBottom.setVisibility(View.VISIBLE);
 
                 } else if(newState == BottomSheetBehavior.STATE_COLLAPSED){
-                    binding.collapsedBottom.setVisibility(View.VISIBLE);
-                    binding.expandedBottom.setVisibility(View.GONE);
 
                 }
             }
@@ -209,14 +221,13 @@ public class ActivityWithFrag extends AppCompatActivity{
     }
 
     private void expandedBottom(Restaurant restaurant) {
-        Log.d("dayOfWeek", "" + restaurant.getPlaceId());
         binding.textNameRestau.setText(restaurant.getName());
         binding.textAdressRestau.setText(restaurant.getVicinity());
         Glide.with(context).load(restaurant.getPicUrl()).centerCrop().into(binding.restauImg);
         binding.chipsDistanceExpanded.setText("" + restaurant.getDistance()+ " m");
         binding.phoneImage.setOnClickListener(v -> dialPhone(restaurant.getPhoneNumber()));
 
-        if (user.isRestauChoosen() && user.getThisDayRestau().getPlaceId() == restaurant.getPlaceId()) {
+        if (user.isRestauChoosen() && user.getThisDayRestau() != null && user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())) {
             binding.fabEatButton.setImageResource(R.drawable.ic_baseline_check_circle_24);
         } else {
             binding.fabEatButton.setImageResource(R.drawable.ic_outline_check_circle_24);
@@ -230,44 +241,33 @@ public class ActivityWithFrag extends AppCompatActivity{
 
 
         binding.likeImage.setOnClickListener(v -> {
-            HashMap<String, Object> restauMap = new HashMap<>();
             if (user.getFavRestau() != null && containsRestaurant(user.getFavRestau(), restaurant)) {
-                Log.d("userFavRestau", "Before " + user.getFavRestau().size());
-                user.getFavRestau().removeIf(restaurant1 -> restaurant1.getPlaceId().equals(restaurant.getPlaceId()));
-                Log.d("userFavRestau", "After " + user.getFavRestau().size());
-                restauMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(),user.getFavRestau(),user.getThisDayRestau(), user.isRestauChoosen()));
-                refUsers.updateChildren(restauMap);
+                restaurantViewModel.favRestau(user, restaurant, UNFAV_RESTAU);
                 binding.likeImage.setImageResource(R.drawable.ic_outline_star_rate_24);
             } else {
-                user.getFavRestau().add(restaurant);
-                restauMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(),user.getThisDayRestau(), user.isRestauChoosen()));
-                refUsers.updateChildren(restauMap);
-
+                restaurantViewModel.favRestau(user, restaurant, FAV_RESTAU);
                 binding.likeImage.setImageResource(R.drawable.ic_baseline_star_rate_24);
             }
         });
 
         binding.fabEatButton.setOnClickListener(v -> {
-            HashMap<String, Object> restauMap = new HashMap<>();
-            if (user.isRestauChoosen() && user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())) {
-                restauMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(),null, false));
-                refUsers.updateChildren(restauMap);
+            if (user.isRestauChoosen() && user.getThisDayRestau() != null && user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())) {
+                restaurantViewModel.eatRestaurant(user, restaurant, DEL_RESTAU);
                 user.setRestauChoosen(false);
                 binding.fabEatButton.setImageResource(R.drawable.ic_outline_check_circle_24);
-            } else if (user.isRestauChoosen() && !user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())){
-                restauMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), restaurant, true));
-                refUsers.updateChildren(restauMap);
+
+            } else if (user.isRestauChoosen() && user.getThisDayRestau() != null && !user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())){
+                restaurantViewModel.eatRestaurant(user, restaurant, CHAN_RESTAU);
                 user.setRestauChoosen(true);
                 user.setThisDayRestau(restaurant);
                 binding.fabEatButton.setImageResource(R.drawable.ic_baseline_check_circle_24);
+
             } else {
-                restauMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), restaurant, true));
-                refUsers.updateChildren(restauMap);
+                restaurantViewModel.eatRestaurant(user, restaurant, ADD_RESTAU);
                 user.setRestauChoosen(true);
                 user.setThisDayRestau(restaurant);
                 binding.fabEatButton.setImageResource(R.drawable.ic_baseline_check_circle_24);
             }
-            Log.d("firebaseTest", "" + user.getThisDayRestau().getPlaceId());
         });
 
 
@@ -280,9 +280,12 @@ public class ActivityWithFrag extends AppCompatActivity{
                 startActivity(intent);
             }
         });
+
+        binding.rvListMatesRestau.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        binding.rvListMatesRestau.setAdapter(adapter);
+        adapter.setUserList(restaurant.getListUser());
+
     }
-
-
 
     private void dialPhone(String phoneNumber) {
         Log.d("téléphone 2", "" + phoneNumber);

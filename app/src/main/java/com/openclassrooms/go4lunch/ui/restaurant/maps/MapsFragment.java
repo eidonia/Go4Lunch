@@ -4,9 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.text.Editable;
@@ -34,18 +32,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.libraries.places.api.Places;
-import com.google.android.libraries.places.api.model.RectangularBounds;
-import com.google.android.libraries.places.api.net.PlacesClient;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.FragmentMapsBinding;
 import com.openclassrooms.go4lunch.models.Restaurant;
@@ -57,23 +47,26 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 import static android.content.Context.LOCATION_SERVICE;
+import static com.openclassrooms.go4lunch.utils.Constante.MAPS_FRAG;
 
 @AndroidEntryPoint
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
 
     @Inject
+    @Named("users")
     public DatabaseReference refUsers;
     @Inject
     public Location location;
     private FragmentMapsBinding binding;
     private FragmentActivity fragActivity;
     private RestaurantViewModel restaurantViewModel;
-    private HashMap<Marker, Restaurant> hashMap = new HashMap<>();
+    private final HashMap<Marker, Restaurant> hashMap = new HashMap<>();
     private User user;
     private FirebaseUser firebaseUser;
     private LocationManager locationManager;
@@ -132,29 +125,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 17.0f);
         googleMap.animateCamera(update);
 
-
-        restaurantViewModel.getRestaurants().observe(getViewLifecycleOwner(), restaurants -> {
-            Log.d("restaurant", " " + restaurants.size());
-            for (Restaurant restaurant : restaurants) {
-                Gson gson =  new Gson();
-                Query query = refUsers.child(firebaseUser.getUid());
-
-                query.addListenerForSingleValueEvent(new ValueEventListener() {
-
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        user = snapshot.getValue(User.class);
-                        setMarkers(user, restaurants);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-
-                    }
-                });
-                Log.d("restauDetails", " " + gson.toJson(restaurant));
-
-            }
+        restaurantViewModel.getUser(firebaseUser.getUid()).observe(getViewLifecycleOwner(), userFirebase -> user = userFirebase);
+        restaurantViewModel.getListRestaurant().observe(getViewLifecycleOwner(), restaurants -> {
+            Log.d("restaurant", "maps " + restaurants.size());
+                setMarkers(restaurants);
         });
 
         googleMap.setOnMarkerClickListener(marker -> {
@@ -182,7 +156,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     restaurantViewModel.setRestauQueryList(infoRestau);
                 }else if (s.length() < 3) {
 
-                    restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+                    restaurantViewModel.getRestaurants();
                 }
             }
 
@@ -200,7 +174,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         boolean contains = false;
         for (Restaurant item : rest) {
             if (item.getPlaceId().equals(restaurant.getPlaceId())) {
-                Log.d("trueResult", "true but fail");
                 contains = true;
             }
         }
@@ -210,8 +183,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     @Override
     public void onResume() {
-
-        Log.d("LatLong", "Coucou");
         binding.mapView.onResume();
         super.onResume();
     }
@@ -234,13 +205,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    public void setMarkers(User user,List<Restaurant> listNet) {
-        for (Restaurant restaurant: listNet) {
-            user.actualiseMarker(restaurant);
+    public void setMarkers(List<Restaurant> listNet) {
+        for (Restaurant restaurant : listNet) {
+            int marker = R.drawable.baseline_place_unbook_24;
+            if (restaurant.getListUser().size() > 0) {
+                marker = R.drawable.baseline_place_booked_24;
+            }
             hashMap.put(gMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(restaurant.getLatitude(), restaurant.getLongitude()))
-                    .icon(BitmapDescriptorFactory.fromResource(restaurant.getMarker())))
-                    ,restaurant);
+                            .position(new LatLng(restaurant.getLatitude(), restaurant.getLongitude()))
+                            .icon(BitmapDescriptorFactory.fromResource(marker)))
+                    , restaurant);
         }
     }
 }

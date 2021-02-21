@@ -16,7 +16,7 @@
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_outline_menu_24"
             android:background="@color/colorPrimary"
-            app:title="Koin"/>
+            app:title="Collègues"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView

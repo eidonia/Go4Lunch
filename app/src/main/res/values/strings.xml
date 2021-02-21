@@ -27,6 +27,22 @@
     <string name="title_settings">Paramètres</string>
     <string name="title_disconnect">Déconnexion</string>
     <string name="search">Rechercher</string>
+
+    <string name="profile">Profil</string>
+    <string name="nameText">Changer de nom</string>
+    <string name="pictureText">Changer votre photo</string>
+    <string name="notification">Notification</string>
+    <string name="btnValidate">Valider</string>
+    <string name="btnCancel">Annuler</string>
+    <string name="error">Insérer un nouveau nom</string>
+    <string name="takeAPic">Prenez une photo</string>
+    <string name="chooseAPic">Choisissez une photo</string>
+    <string name="picUpdate">Photo mis à jour</string>
+
+    <string name="disconnect">Déconnexion</string>
+    <string name="textDisco">Voulez-vous vous déconnecter ?</string>
+    <string name="yesDisco">Oui</string>
+    <string name="noDisco">Non</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 

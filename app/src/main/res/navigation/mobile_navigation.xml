@@ -25,4 +25,18 @@
         android:name="com.openclassrooms.go4lunch.ui.restaurant.favrestau.FavRestauFrag"
         tools:layout="@layout/fragment_fav_restau"/>
 
+    <fragment
+        android:id="@+id/navBar_settings"
+        android:name="com.openclassrooms.go4lunch.ui.restaurant.SettingsFragment"
+        tools:layout="@layout/fragment_settings"/>
+
+    <dialog
+        android:id="@+id/navBar_disconnection"
+        android:name="com.openclassrooms.go4lunch.ui.restaurant.LogOutDialFrag"/>
+
+    <fragment
+        android:id="@+id/navBar_lunch"
+        android:name="com.openclassrooms.go4lunch.ui.restaurant.todayrestau.TodayRestauFragment"
+        tools:layout="@layout/fragment_today_restau"/>
+
 </navigation>

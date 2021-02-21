@@ -38,16 +38,17 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'androidx.navigation:navigation-fragment:2.3.2'
-    implementation 'androidx.navigation:navigation-ui:2.3.2'
+    implementation 'androidx.navigation:navigation-fragment:2.3.3'
+    implementation 'androidx.navigation:navigation-ui:2.3.3'
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.1.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.preference:preference:1.1.1'
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-    implementation 'com.google.android.material:material:1.3.0-beta01'
+    implementation 'com.google.android.material:material:1.3.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.21"
 
     //EASYPERMISSIONS
@@ -60,6 +61,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.firebaseui:firebase-ui-auth:6.2.0'
     implementation 'com.google.firebase:firebase-database'
+    implementation 'com.google.firebase:firebase-storage'
     implementation 'com.firebaseui:firebase-ui-database:6.2.0'
 
     //FACEBOOK
@@ -85,16 +87,13 @@ dependencies {
     implementation "com.google.dagger:hilt-android:2.29-alpha"
     androidTestImplementation "com.google.dagger:hilt-android-testing:2.29-alpha"
     annotationProcessor "com.google.dagger:hilt-android-compiler:2.29-alpha"
-    implementation "androidx.hilt:hilt-work:1.0.0-alpha02"
-    annotationProcessor 'androidx.hilt:hilt-compiler:1.0.0-alpha02'
-    implementation 'androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha02'
+    implementation "androidx.hilt:hilt-work:1.0.0-alpha03"
+    annotationProcessor 'androidx.hilt:hilt-compiler:1.0.0-alpha03'
+    implementation 'androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03'
     androidTestImplementation  'com.google.dagger:hilt-android-testing:2.29-alpha'
     androidTestAnnotationProcessor 'com.google.dagger:hilt-android-compiler:2.29-alpha'
     testImplementation 'com.google.dagger:hilt-android-testing:2.29-alpha'
     testAnnotationProcessor 'com.google.dagger:hilt-android-compiler:2.29-alpha'
-
-    //WORKER
-    implementation "androidx.work:work-runtime:2.4.0"
 
     //RETROFIT
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
@@ -107,6 +106,12 @@ dependencies {
     //GLIDE
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+
+    //WORKER
+    implementation "androidx.work:work-runtime:2.5.0"
+
+    //EVENTBUS
+    implementation 'org.greenrobot:eventbus:3.2.0'
 
 }
 repositories {

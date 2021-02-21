@@ -56,12 +56,14 @@ public class ListFragment extends Fragment {
 
         binding = FragmentListBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
+
         restAdapter = new ListRestAdapter(getContext());
         binding.listRestau.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         binding.listRestau.setAdapter(restAdapter);
+
         restaurantViewModel = new ViewModelProvider(this.getActivity()).get(RestaurantViewModel.class);
 
-        restaurantViewModel.getRestaurants().observe(getViewLifecycleOwner(), restaurants -> {
+        restaurantViewModel.getListRestaurant().observe(getViewLifecycleOwner(), restaurants -> {
             restAdapter.updateRestauList(restaurants);
         });
 
@@ -85,7 +87,7 @@ public class ListFragment extends Fragment {
                     restaurantViewModel.setRestauQueryList(infoRestau);
                 }else if (s.length() < 3) {
 
-                    restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+                    restaurantViewModel.getRestaurants();
                 }
             }
 

@@ -9,7 +9,7 @@ public class NearbyRestaurantResponse {
     private List<Object> htmlAttributions;
     private ArrayList<Result> results;
     private String status;
-    private Map<String, Object> additionalProperties;
+    private final Map<String, Object> additionalProperties;
 
     public NearbyRestaurantResponse(List<Object> htmlAttributions, ArrayList<Result> results, String status, Map<String, Object> additionalProperties) {
         this.htmlAttributions = htmlAttributions;
