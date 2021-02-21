@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardRestau"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    android:clickable="true"
+    android:padding="5dp"
+    app:cardElevation="3dp"
+    app:layout_constraintTop_toTopOf="parent"
+    app:strokeColor="@color/colorCircle"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/imgRestau"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/adresseRes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:hint="Adress"
+            android:maxLines="1"
+            app:layout_constraintEnd_toStartOf="@id/ratingRest"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/nameRes" />
+
+        <TextView
+            android:id="@+id/openRes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Hour"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/adresseRes" />
+
+        <TextView
+            android:id="@+id/distanceRest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="distance"
+            android:paddingEnd="5dp"
+            app:layout_constraintEnd_toStartOf="@id/imgRestau"
+            app:layout_constraintTop_toTopOf="@id/nameRes" />
+
+        <TextView
+            android:id="@+id/nameRes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Name"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/ratingRest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="rating"
+            android:paddingEnd="5dp"
+            app:layout_constraintEnd_toStartOf="@id/imgRestau"
+            app:layout_constraintTop_toBottomOf="@id/distanceRest">
+
+            <ImageView
+                android:id="@+id/firstStar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_star_rate_24"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/secondStar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_star_rate_24"
+                app:layout_constraintStart_toEndOf="@id/firstStar"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/thirdStar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_star_rate_24"
+                app:layout_constraintStart_toEndOf="@id/secondStar"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
