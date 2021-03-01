@@ -12,9 +12,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.FragmentTodayRestauBinding;
 import com.openclassrooms.go4lunch.models.Restaurant;
@@ -23,9 +20,6 @@ import com.openclassrooms.go4lunch.ui.restaurant.workmates.UserListAdapter;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 
 import java.util.List;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -36,12 +30,8 @@ import static com.openclassrooms.go4lunch.utils.Constante.UNFAV_RESTAU;
 @AndroidEntryPoint
 public class TodayRestauFragment extends Fragment {
 
-    @Inject
-    @Named("users")
-    public DatabaseReference refUsers;
     private FragmentTodayRestauBinding binding;
     private RestaurantViewModel restaurantViewModel;
-    private FirebaseUser firebaseUser;
     private User user;
     private UserListAdapter adapter;
 
@@ -50,10 +40,9 @@ public class TodayRestauFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = FragmentTodayRestauBinding.inflate(inflater);
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
-        firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         adapter = new UserListAdapter(getContext(), BSD_ADA);
 
-        restaurantViewModel.getUser(firebaseUser.getUid()).observe(getViewLifecycleOwner(), userFirebase -> {
+        restaurantViewModel.getUser().observe(getViewLifecycleOwner(), userFirebase -> {
             user = userFirebase;
             if (user.getThisDayRestau() != null) {
                 Restaurant restaurant = user.getThisDayRestau();

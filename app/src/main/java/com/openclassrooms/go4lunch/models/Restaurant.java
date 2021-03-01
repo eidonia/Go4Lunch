@@ -6,9 +6,14 @@ import com.openclassrooms.go4lunch.models.details.OpeningHours;
 import com.openclassrooms.go4lunch.models.details.Period;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.openclassrooms.go4lunch.utils.Constante.DEC_FOR;
 
@@ -31,20 +36,18 @@ public class Restaurant {
     public Restaurant() {
     }
 
-    public Restaurant(Float latitude, Float longitude, String name, String placeId, Integer rating, String vicinity, Integer distance, OpeningHours openingHours, String phoneNumber, String picUrl, String website, int marker, List<User> listUser) {
+    public Restaurant(Float latitude, Float longitude, String name, String placeId, Integer rating, String vicinity, OpeningHours openingHours, String phoneNumber, String picUrl, String website, int marker) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.name = name;
         this.placeId = placeId;
         this.rating = rating;
         this.vicinity = vicinity;
-        this.distance = distance;
         this.openingHours = openingHours;
         this.phoneNumber = phoneNumber;
         this.picUrl = picUrl;
         this.website = website;
         this.marker = marker;
-        this.listUser = listUser;
     }
 
     public Float getLatitude() {
@@ -143,55 +146,176 @@ public class Restaurant {
         this.marker = marker;
     }
 
-    public void getActualStatus() {
-        Calendar calendar = Calendar.getInstance();
-        Log.d("dayOfWeek", "" + calendar.get(Calendar.DAY_OF_WEEK));
-        String actualHour = new DecimalFormat(DEC_FOR).format((calendar.get(Calendar.HOUR_OF_DAY)));
-        String actualMinute = new DecimalFormat(DEC_FOR).format((calendar.get(Calendar.MINUTE)));
-        String concatHourMinute = actualHour + actualMinute;
-        Log.d("dayOfWeek", "" + concatHourMinute + "  " + Integer.valueOf(concatHourMinute));
-        int countPeriod = 0;
-        List<String> periodOpen = new ArrayList<>();
-        List<String> periodClose = new ArrayList<>();
-        if (openingHours.getOpenNow()) { //open so looking for close
-            for (Period period : openingHours.getPeriods()) {
-                Log.d("dayOfWeek", "" + (period.getClose().getDay() + 1) + "  " + calendar.get(Calendar.DAY_OF_WEEK));
-                if (period.getClose().getDay() == calendar.get(Calendar.DAY_OF_WEEK)) {
-                    countPeriod++;
-                    periodClose.add(period.getClose().getTime());
-                }
-
-                if (period.getOpen().getDay() == calendar.get(Calendar.DAY_OF_WEEK)) {
-                    countPeriod++;
-                    periodClose.add(period.getClose().getTime());
-                }
-
-            }
-            if (periodClose.size() == 1) {
-                if (Integer.parseInt(concatHourMinute) > 1000 && Integer.parseInt(periodClose.get(0)) < 1000) {
-                    if (Math.abs(Integer.parseInt(concatHourMinute) - (Integer.parseInt(periodClose.get(0)) + 2400)) < 300) {
-                        Log.d("CloseSoon", "Le restaurant ferme dans moins d'une heure");
-                    } else {
-                        Log.d("CloseSoon", "Ouvert");
-                    }
-                } else {
-                    if (Math.abs(Integer.parseInt(concatHourMinute) - (Integer.parseInt(periodClose.get(0)))) < 300) {
-                        Log.d("CloseSoon", "Le restaurant ferme dans moins d'une heure");
-                    } else {
-                        Log.d("CloseSoon", "Ouvert");
-                    }
-                }
-            } else if (periodClose.size() == 2) {
-
-            }
-        }
-    }
-
     public List<User> getListUser() {
         return listUser;
     }
 
     public void setListUser(List<User> listUser) {
         this.listUser = listUser;
+    }
+
+    public HashMap<String, String> setChips(int day) {
+        day -= 1;
+        HashMap<String, String> hourMap = new HashMap<>();
+        List<Period> listPeriods = new ArrayList<>();
+        Log.d("chipsTest", "setCHips " + day);
+        if (openingHours.getOpenNow()) {
+            for (Period period : openingHours.getPeriods()) {
+                if (period.getOpen().getDay() == day) {
+                    Log.d("chipsTest", "getOpenNow true " + day);
+                    listPeriods.add(period);
+                }
+            }
+        } else {
+            Log.d("chipsTest", "getOpenNow false " + openingHours.getPeriods().size());
+            for (Period period : openingHours.getPeriods()) {
+                Log.d("chipsTest", "getOpenNow false" + day);
+                if (period.getClose().getDay() == day) {
+                    listPeriods.add(period);
+                }
+            }
+        }
+
+        if (listPeriods.isEmpty()) {
+            Log.d("chipsTest", "close allday" + day);
+            hourMap.put("isOpen", "closeAllday");
+        } else if (listPeriods.size() == 1) {
+            Log.d("chipsTest", "open 1 time" + day);
+            return getOnePeriod(listPeriods, openingHours.getOpenNow());
+        } else {
+            Log.d("chipsTest", "open 2 times" + day);
+            return getTwoPeriods(listPeriods, openingHours.getOpenNow());
+        }
+
+        return hourMap;
+    }
+
+    private HashMap<String, String> getOnePeriod(List<Period> periods, Boolean openNow) {
+        Log.d("chipsTest", "Coucou 1 time");
+        HashMap<String, String> hourMap = new HashMap<>();
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+        SimpleDateFormat sdfInt = new SimpleDateFormat("HHmm");
+        String thisTime = sdf.format(cal.getTime());
+        String thisTimeInt = sdfInt.format(cal.getTime());
+
+        Period firstPeriod = periods.get(0);
+
+        LocalTime start = LocalTime.parse(thisTime);
+        String closePeriodStr = firstPeriod.getClose().getTime();
+        String closePeriodStrTemp = closePeriodStr.substring(0, 2) + ":" + closePeriodStr.substring(2);
+        LocalTime closePeriodLocal = LocalTime.parse(closePeriodStrTemp);
+        String openPeriodStr = firstPeriod.getOpen().getTime();
+        String openPeriodStrTemp = openPeriodStr.substring(0, 2) + ":" + openPeriodStr.substring(2);
+        LocalTime openPeriodLocal = LocalTime.parse(openPeriodStrTemp);
+
+        int actualTimeInt = Integer.parseInt(thisTimeInt);
+        int remainTime;
+        int closePeriod = Integer.parseInt(firstPeriod.getClose().getTime());
+        int openPeriod = Integer.parseInt(firstPeriod.getOpen().getTime());
+        String remainTimeStr = "00";
+
+        Log.d("remainTime", "thisTime : " + thisTime + " - closePeriod : " + closePeriod + " - openPeriod" + openPeriod);
+
+        if (openNow) { //OPEN
+            hourMap.put("isOpen", openNow.toString());
+            hourMap.put("hour", closePeriodStrTemp);
+            remainTime = actualTimeInt - closePeriod;
+            remainTimeStr = calTime(start, closePeriodLocal);
+
+        } else { //CLOSE
+            hourMap.put("isOpen", openNow.toString());
+            hourMap.put("hour", openPeriodStrTemp);
+            remainTime = actualTimeInt - openPeriod;
+            remainTimeStr = calTime(start, openPeriodLocal);
+        }
+        hourMap.put("remainTime", String.valueOf(Math.abs(remainTime)));
+        hourMap.put("remainTimeStr", remainTimeStr);
+        return hourMap;
+    }
+
+    private HashMap<String, String> getTwoPeriods(List<Period> periods, Boolean openNow) {
+        Log.d("chipsTest", "Coucou 2 times");
+        HashMap<String, String> hourMap = new HashMap<>();
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+        SimpleDateFormat sdfInt = new SimpleDateFormat("HHmm");
+        String thisTime = sdf.format(cal.getTime());
+        String thisTimeInt = sdfInt.format(cal.getTime());
+
+        Period firstPeriod = periods.get(0);
+        Period secondPeriod = periods.get(1);
+
+        LocalTime start = LocalTime.parse(thisTime);
+        String closeFirstPeriod = firstPeriod.getClose().getTime();
+        String closeFirstPeriodTemp = closeFirstPeriod.substring(0, 2) + ":" + closeFirstPeriod.substring(2);
+        LocalTime firstPeriodClose = LocalTime.parse(closeFirstPeriodTemp);
+        String closeSecondPeriod = secondPeriod.getClose().getTime();
+        String closeSecondPeriodTemp = closeSecondPeriod.substring(0, 2) + ":" + closeSecondPeriod.substring(2);
+        LocalTime secondPeriodClose = LocalTime.parse(closeSecondPeriodTemp);
+        String openFirstPeriod = firstPeriod.getOpen().getTime();
+        String openFirstPeriodTemp = openFirstPeriod.substring(0, 2) + ":" + openFirstPeriod.substring(2);
+        LocalTime firstPeriodOpen = LocalTime.parse(openFirstPeriodTemp);
+        String openSecondPeriod = secondPeriod.getOpen().getTime();
+        String openSecondPeriodTemp = openSecondPeriod.substring(0, 2) + ":" + openSecondPeriod.substring(2);
+        LocalTime secondPeriodOpen = LocalTime.parse(openSecondPeriodTemp);
+
+        int actualTimeInt = Integer.parseInt(thisTimeInt);
+        int closeFirstPeriodInt = Integer.parseInt(firstPeriod.getClose().getTime());
+        int closeSecondPeriodInt = Integer.parseInt(secondPeriod.getClose().getTime());
+        int openFirstPeriodInt = Integer.parseInt(firstPeriod.getOpen().getTime());
+        int openSecondPeriodInt = Integer.parseInt(secondPeriod.getOpen().getTime());
+        int remainTime = 00;
+        String remainTimeStr = "00";
+
+        if (openNow) { //OPEN
+            hourMap.put("isOpen", openNow.toString());
+            if (actualTimeInt > closeFirstPeriodInt && actualTimeInt > openSecondPeriodInt && actualTimeInt < closeSecondPeriodInt) {
+                hourMap.put("hour", closeSecondPeriodTemp);
+                remainTime = actualTimeInt - closeSecondPeriodInt;
+                remainTimeStr = calTime(start, secondPeriodClose);
+            } else if (actualTimeInt > openFirstPeriodInt && actualTimeInt < closeFirstPeriodInt) {
+                hourMap.put("hour", closeFirstPeriodTemp);
+                remainTime = actualTimeInt - closeFirstPeriodInt;
+                remainTimeStr = calTime(start, firstPeriodClose);
+            }
+        } else { //CLOSE
+            hourMap.put("isOpen", openNow.toString());
+            if (actualTimeInt > closeFirstPeriodInt && actualTimeInt < openSecondPeriodInt) {
+                hourMap.put("hour", openSecondPeriodTemp);
+                remainTime = actualTimeInt - openSecondPeriodInt;
+                remainTimeStr = calTime(start, secondPeriodOpen);
+            } else if (actualTimeInt < openFirstPeriodInt && actualTimeInt > closeSecondPeriodInt) {
+                hourMap.put("hour", openFirstPeriodTemp);
+                remainTime = actualTimeInt - openFirstPeriodInt;
+                remainTimeStr = calTime(start, firstPeriodOpen);
+            }
+        }
+
+        hourMap.put("remainTime", String.valueOf(Math.abs(remainTime)));
+        hourMap.put("remainTimeStr", remainTimeStr);
+        return hourMap;
+    }
+
+    private String calTime(LocalTime start, LocalTime end) {
+        Duration timeBetween = Duration.between(start, end);
+        Log.d("calTime", "" + timeBetween.toMillis());
+        int hour = (int) TimeUnit.MILLISECONDS.toHours(timeBetween.toMillis());
+        int minute = (int) (TimeUnit.MILLISECONDS.toMinutes(timeBetween.toMillis()) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(timeBetween.toMillis())));
+        if (minute > 60) {
+            minute -= 60;
+            hour += 1;
+        } else if (minute == 60) {
+            minute = 0;
+            hour += 1;
+        }
+
+        String hourTemp = String.valueOf(hour);
+        String minuteTemp = String.valueOf(minute);
+
+        String hourStr = new DecimalFormat(DEC_FOR).format(hour);
+        String minuteStr = new DecimalFormat(DEC_FOR).format(minute);
+
+        return "" + hourStr + ":" + minuteStr;
     }
 }

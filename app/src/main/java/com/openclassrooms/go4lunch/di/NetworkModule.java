@@ -1,20 +1,15 @@
 package com.openclassrooms.go4lunch.di;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 
-import androidx.core.app.ActivityCompat;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.gson.FieldNamingPolicy;
@@ -87,6 +82,12 @@ public class NetworkModule {
     @Singleton
     public StorageReference provideStorageRef(FirebaseStorage storage) {
         return storage.getReference();
+    }
+
+    @Provides
+    @Singleton
+    public FirebaseFirestore providesDb() {
+        return FirebaseFirestore.getInstance();
     }
 
 }

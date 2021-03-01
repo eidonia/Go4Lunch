@@ -1,7 +1,6 @@
 package com.openclassrooms.go4lunch.ui.restaurant.workmates;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,8 +43,6 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         User user = userList.get(position);
-        Log.d("listUserTest", "iemCount " + user.getName());
-        holder.nameUser.setText(user.getName());
         Glide.with(context).load(user.getPhotoUrl())
                 .apply(new RequestOptions()
                         .circleCrop()
@@ -54,12 +51,16 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
                 .into(holder.imgUser);
         if (typeFrag.equals(LFRAG_ADA)) {
             if (user.isRestauChoosen()) {
+                holder.restauChosen.setTextColor(context.getResources().getColor(android.R.color.black));
                 holder.restauChosen.setText(user.getThisDayRestau().getName());
             } else {
+                holder.restauChosen.setTextColor(context.getResources().getColor(R.color.greyTextColor));
                 holder.restauChosen.setText("" + user.getName() + " n'a pas choisi de restaurant");
+
             }
         } else {
-            holder.restauChosen.setVisibility(View.GONE);
+            holder.restauChosen.setTextColor(context.getResources().getColor(android.R.color.black));
+            holder.restauChosen.setText(user.getName());
         }
     }
 
@@ -78,14 +79,12 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        TextView nameUser;
         ImageView imgUser;
         TextView restauChosen;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            nameUser = itemView.findViewById(R.id.nameUser);
             imgUser = itemView.findViewById(R.id.userImg);
             restauChosen = itemView.findViewById(R.id.restauChoosen);
         }

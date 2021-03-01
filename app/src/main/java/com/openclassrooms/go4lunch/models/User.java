@@ -24,15 +24,6 @@ public class User {
         this.isRestauChoosen = isRestauChoosen;
     }
 
-    public User(String name, String email, String photoUrl, List<Restaurant> favRestau, Restaurant thisDayRestau, boolean isRestauChoosen) {
-        this.name = name;
-        this.email = email;
-        this.photoUrl = photoUrl;
-        this.favRestau = favRestau;
-        this.thisDayRestau = thisDayRestau;
-        this.isRestauChoosen = isRestauChoosen;
-    }
-
     public String getId() {
         return id;
     }

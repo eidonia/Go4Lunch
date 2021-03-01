@@ -1,21 +1,14 @@
 package com.openclassrooms.go4lunch.ui.restaurant.list;
 
 import android.annotation.SuppressLint;
-import android.app.SearchManager;
-import android.content.Context;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.SearchView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,17 +16,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.FragmentListBinding;
 import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 
-import java.util.HashMap;
+import java.util.Collections;
 
 import javax.inject.Inject;
-
-import static android.content.Context.LOCATION_SERVICE;
 
 public class ListFragment extends Fragment {
 
@@ -64,8 +53,10 @@ public class ListFragment extends Fragment {
         restaurantViewModel = new ViewModelProvider(this.getActivity()).get(RestaurantViewModel.class);
 
         restaurantViewModel.getListRestaurant().observe(getViewLifecycleOwner(), restaurants -> {
+            Collections.sort(restaurants, (restaurant, t1) -> restaurant.getDistance().compareTo(t1.getDistance()));
             restAdapter.updateRestauList(restaurants);
         });
+
 
         binding.toolbar.setNavigationOnClickListener(v -> {
             ((ActivityWithFrag)getActivity()).openDrawer();
@@ -79,15 +70,19 @@ public class ListFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() >= 3) {
-                    HashMap<String, String> infoRestau = new HashMap<>();
-                    infoRestau.put("query", s.toString());
-                    infoRestau.put("lat",  String.valueOf(location.getLatitude()));
-                    infoRestau.put("lon", String.valueOf(location.getLongitude()));
-                    restaurantViewModel.setRestauQueryList(infoRestau);
-                }else if (s.length() < 3) {
+                if (s.length() >= 6) {
+                    restaurantViewModel.getRestauQueryList(s.toString()).observe(getViewLifecycleOwner(), restaurants -> {
+                        Log.d("Query", "observer " + restaurants.size());
+                        //Collections.sort(restaurants, (restaurant, t1) -> restaurant.getDistance().compareTo(t1.getDistance()));
+                        restAdapter.updateRestauList(restaurants);
+                    });
 
-                    restaurantViewModel.getRestaurants();
+                } else if (s.length() == 0) {
+
+                    restaurantViewModel.getListRestaurant().observe(getViewLifecycleOwner(), restaurants -> {
+                        Collections.sort(restaurants, (restaurant, t1) -> restaurant.getDistance().compareTo(t1.getDistance()));
+                        restAdapter.updateRestauList(restaurants);
+                    });
                 }
             }
 

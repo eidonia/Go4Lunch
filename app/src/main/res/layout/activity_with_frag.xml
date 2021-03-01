@@ -75,7 +75,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:enabled="false"
-                    android:text="Open"
                     app:chipBackgroundColor="@android:color/transparent"
                     app:chipIcon="@drawable/ic_baseline_access_time_24" />
 
@@ -244,7 +243,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:enabled="false"
-                    android:text="Open"
                     app:chipBackgroundColor="@android:color/transparent"
                     app:chipIcon="@drawable/ic_baseline_access_time_24" />
 

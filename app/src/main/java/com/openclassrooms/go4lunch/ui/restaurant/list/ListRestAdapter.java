@@ -17,6 +17,8 @@ import com.openclassrooms.go4lunch.models.Restaurant;
 import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 
 public class ListRestAdapter extends RecyclerView.Adapter<ListRestAdapter.ViewHolder> {
@@ -61,7 +63,23 @@ public class ListRestAdapter extends RecyclerView.Adapter<ListRestAdapter.ViewHo
             holder.thirdStar.setImageDrawable(context.getDrawable(R.drawable.ic_outline_star_rate_24));
         }
         Glide.with(context).load(restaurant.getPicUrl()).centerCrop().into(holder.imgRestau);
-        holder.itemView.setOnClickListener(v -> ((ActivityWithFrag) context).openBottomSheetDialog(restaurant, "list"));
+        holder.itemView.setOnClickListener(v -> ((ActivityWithFrag) context).openBottomSheetDialog(restaurant, "list", null));
+
+        Calendar calendar = Calendar.getInstance();
+        int day = calendar.get(Calendar.DAY_OF_WEEK);
+        Log.d("chipsTest", "day");
+        HashMap<String, String> mapHourRestau = restaurant.setChips(day);
+        String openCLose = mapHourRestau.get("isOpen");
+
+        if (openCLose.equals("true")) {
+            String hour = mapHourRestau.get("hour");
+            holder.openRestau.setText("Ouvert jusqu'à " + hour);
+        } else if (openCLose.equals("false")) {
+            String hour = mapHourRestau.get("hour");
+            holder.openRestau.setText("Fermé - ouvre à " + hour);
+        } else {
+            holder.openRestau.setText("Fermé aujourd'hui");
+        }
 
     }
 

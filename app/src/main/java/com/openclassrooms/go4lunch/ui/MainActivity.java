@@ -3,6 +3,7 @@ package com.openclassrooms.go4lunch.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
@@ -19,12 +20,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.storage.StorageReference;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityMainBinding;
@@ -41,7 +43,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -52,9 +53,6 @@ import static com.openclassrooms.go4lunch.utils.Constante.RC_SIGN_IN;
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks, LocationListener {
 
-    @Inject
-    @Named("users")
-    public DatabaseReference refUsers;
     @Inject
     public StorageReference storage;
     private static final int RC_CAMERA_AND_LOCATION = 123;
@@ -70,8 +68,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
-        restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
 
 
         EasyPermissions.requestPermissions(
@@ -80,6 +76,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         .setPositiveButtonText(R.string.rationale_ask_ok)
                         .setNegativeButtonText(R.string.rationale_ask_cancel)
                         .build());
+
+
         try {
             PackageInfo info = getPackageManager().getPackageInfo(
                     "com.openclassrooms.go4lunch",
@@ -108,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         startActivityForResult(
                 AuthUI.getInstance()
                         .createSignInIntentBuilder()
+                        .setIsSmartLockEnabled(false)
                         .setTheme(R.style.LoginTheme)
                         .setAvailableProviders(providers)
                         .setLogo(R.drawable.meal_v3_final)
@@ -124,7 +123,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             if (resultCode == RESULT_OK) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getUid(), user.getPhotoUrl());
+                if (user.getPhotoUrl() == null) {
+                    Log.d("addUser", "photoUrl null");
+                    restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), null);
+                } else {
+                    restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
+                }
             } else {
                 Log.d("connection", "" + response.getError().getErrorCode());
             }
@@ -142,23 +146,36 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("MissingPermission")
     @Override
     public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200, 30, this);
         Criteria criteria = new Criteria();
         String provider = locationManager.getBestProvider(criteria, true);
         location = locationManager.getLastKnownLocation(provider);
-        //restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            startActivity(new Intent(this, ActivityWithFrag.class));
-        } else {
-            connectFirebase();
-        }
+        restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
+        restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+
+        handler = new Handler();
+        Runnable runnable = () -> {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                restaurantViewModel.getUser();
+                startActivity(new Intent(this, ActivityWithFrag.class));
+            } else {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                prefs.edit()
+                        .putBoolean("isNotifActiv", true)
+                        .apply();
+                connectFirebase();
+            }
+        };
+
+        handler.postDelayed(runnable, 3000);
     }
 
     @Override
-    protected void onResume() {
+    protected void onStart() {
         EventBus.getDefault().register(this);
-        super.onResume();
+        super.onStart();
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.openclassrooms.go4lunch.ui.restaurant;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,11 +12,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -48,6 +51,7 @@ public class SettingsFragment extends Fragment {
     private ChangePictureBinding changePictureBinding;
     private User user;
     private Uri photoURI;
+    private Boolean isActivNotif;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -61,11 +65,25 @@ public class SettingsFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = FragmentSettingsBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
-        restaurantViewModel.getUser(firebaseUser.getUid()).observe(getViewLifecycleOwner(), user1 -> {
+        restaurantViewModel.getUser().observe(getViewLifecycleOwner(), user1 -> {
                     binding.editName.setText(user1.getName());
                     this.user = user1;
                 }
         );
+
+        isActivNotif = PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("isNotifActiv", true);
+
+        binding.activNotif.setChecked(isActivNotif);
+
+        binding.activNotif.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+                prefs.edit()
+                        .putBoolean("isNotifActiv", b)
+                        .apply();
+            }
+        });
 
         binding.constraintName.setOnClickListener(view1 -> openDialog("Name"));
 
@@ -142,7 +160,7 @@ public class SettingsFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_FROM_PICTURE && resultCode == RESULT_OK) {
-            restaurantViewModel.changePic(firebaseUser.getUid(), user, photoURI);
+            restaurantViewModel.changePic(user, photoURI);
             binding.updatePic.setText(R.string.picUpdate);
 
         } else if (requestCode == GET_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
@@ -167,7 +185,7 @@ public class SettingsFragment extends Fragment {
                         }
                     }
 
-                    restaurantViewModel.changePic(firebaseUser.getUid(), user, imageUri);
+                    restaurantViewModel.changePic(user, imageUri);
                     binding.updatePic.setText(R.string.picUpdate);
                 }
             }
@@ -192,7 +210,7 @@ public class SettingsFragment extends Fragment {
                 if (changeNameBinding.editNameDial.getText().toString().isEmpty()) {
                     changeNameBinding.textError.setText(R.string.error);
                 } else {
-                    restaurantViewModel.changeName(firebaseUser.getUid(), new User(changeNameBinding.editNameDial.getText().toString(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), user.getThisDayRestau(), user.isRestauChoosen()));
+                    restaurantViewModel.changeName(changeNameBinding.editNameDial.getText().toString());
                     dialogInterface.dismiss();
                 }
             });

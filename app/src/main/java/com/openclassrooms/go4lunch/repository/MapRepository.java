@@ -1,28 +1,24 @@
 package com.openclassrooms.go4lunch.repository;
 
-import android.app.usage.NetworkStats;
-import android.content.Intent;
+import android.app.Application;
 import android.location.Location;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.Task;
+import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.RectangularBounds;
 import com.google.android.libraries.places.api.model.TypeFilter;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
@@ -30,26 +26,19 @@ import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.event.ActivityFragEvent;
 import com.openclassrooms.go4lunch.models.Restaurant;
 import com.openclassrooms.go4lunch.models.User;
-import com.openclassrooms.go4lunch.models.details.DetailsRestaurant;
 import com.openclassrooms.go4lunch.models.details.ResultDetails;
-import com.openclassrooms.go4lunch.models.nearby.NearbyRestaurantResponse;
 import com.openclassrooms.go4lunch.models.nearby.Result;
 import com.openclassrooms.go4lunch.network.GoogleMapService;
-import com.openclassrooms.go4lunch.ui.MainActivity;
-import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -65,22 +54,27 @@ import static com.openclassrooms.go4lunch.utils.Constante.UNFAV_RESTAU;
 public class MapRepository {
 
     private final GoogleMapService googleMapService;
-    private final DatabaseReference refRest;
-    private final DatabaseReference refUser;
     private final StorageReference storage;
+    private final FirebaseFirestore db;
     private final ArrayList<Restaurant> restauList = new ArrayList<>();
     private final ArrayList<User> userList = new ArrayList<>();
     private int count = 0;
     private int countUser;
     private int listSize = 0;
     private final int radius = 300;
+    private final Location loc;
+    private final PlacesClient placesClient;
+    private final ArrayList<Restaurant> resultPredic = new ArrayList<>();
+    boolean isExist = false;
 
     @Inject
-    public MapRepository(GoogleMapService googleMapService, @Named("restaurants") DatabaseReference refRest, @Named("users") DatabaseReference refUser, StorageReference storage) {
+    public MapRepository(GoogleMapService googleMapService, StorageReference storage, FirebaseFirestore db, Location location, Application app) {
         this.googleMapService = googleMapService;
-        this.refRest = refRest;
-        this.refUser = refUser;
         this.storage = storage;
+        this.loc = location;
+        this.db = db;
+        Places.initialize(app, API_KEY);
+        placesClient = Places.createClient(app);
     }
 
     public void getNearbyRestaurant(LatLng loc) {
@@ -116,12 +110,23 @@ public class MapRepository {
                     });
     }
 
-    public LiveData<List<Restaurant>> searchRestaurant(String s, LatLng loc, RectangularBounds bounds, PlacesClient placesClient) {
-        LiveData<List<Restaurant>> resultLiveData = new MutableLiveData<>();
+    public static LatLng getCoordinate(double lat0, double lng0, long dy, long dx) {
+        double lat = lat0 + (180 / Math.PI) * (dy / 6378137);
+        double lng = lng0 + (180 / Math.PI) * (dx / 6378137) / Math.cos(lat0);
+        return new LatLng(lat, lng);
+    }
+
+    public MutableLiveData<List<Restaurant>> searchRestaurant(String s) {
         Log.d("QueryTest", "Repo " + s);
+        MutableLiveData<List<Restaurant>> resultLiveData = new MutableLiveData<>();
+        List<String> placeIdPredic = new ArrayList<>();
+        RectangularBounds bounds = RectangularBounds.newInstance(
+                getCoordinate(loc.getLatitude(), loc.getLongitude(), -1000, -1000),
+                getCoordinate(loc.getLatitude(), loc.getLatitude(), 1000, 1000)
+        );
         FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
                 .setLocationBias(bounds)
-                .setOrigin(loc)
+                .setOrigin(new LatLng(loc.getLatitude(), loc.getLongitude()))
                 .setCountries("FR")
                 .setTypeFilter(TypeFilter.ESTABLISHMENT)
                 .setQuery(s)
@@ -131,17 +136,18 @@ public class MapRepository {
             Log.d("result", "Here");
             for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
                 if (prediction.getDistanceMeters() < 300) {
-                    Log.i("QueryTest", prediction.getPrimaryText(null).toString() + "  " + prediction.getSecondaryText(null).toString());
+                    Log.d("QueryTest", "prediction " + prediction.getPrimaryText(null).toString() + "  " + prediction.getPlaceId());
+                    placeIdPredic.add(prediction.getPlaceId());
                 }
-
             }
+
+            getRestauFromPrediction(placeIdPredic, resultLiveData);
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
                 Log.e("search", "Place not found: " + apiException.getStatusCode());
             }
         });
-
         return resultLiveData;
     }
 
@@ -181,84 +187,65 @@ public class MapRepository {
                 });
     }
 
+    public void getRestauFromPrediction(List<String> placeId, MutableLiveData<List<Restaurant>> restauList) {
+        List<Restaurant> restauFromPredic = new ArrayList<>();
+        db.collection("restaurants")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (String place : placeId) {
+                        for (QueryDocumentSnapshot queryDocuments : queryDocumentSnapshots) {
+                            Restaurant restaurant = queryDocuments.toObject(Restaurant.class);
+                            if (place.equals(restaurant.getPlaceId())) {
+                                restauFromPredic.add(restaurant);
+                            }
+                        }
+                    }
+                    Log.d("QueryTest", "restauFromPredic " + restauFromPredic.size());
+                    restauList.postValue(restauFromPredic);
+                });
+    }
+
     public MutableLiveData<List<Restaurant>> getRestFromFirebase() {
         restauList.clear();
         MutableLiveData<List<Restaurant>> resultLiveData = new MutableLiveData<>();
-        Query query = refRest;
-        query.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@androidx.annotation.NonNull DataSnapshot snapshot) {
-                for (DataSnapshot snap : snapshot.getChildren()) {
-                    restauList.add(snap.getValue(Restaurant.class));
-                }
-            }
-
-            @Override
-            public void onCancelled(@androidx.annotation.NonNull DatabaseError error) {
-
-            }
-        });
-        resultLiveData.postValue(restauList);
+        db.collection("restaurants")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        Restaurant restaurant = documentSnapshot.toObject(Restaurant.class);
+                        if (distanceRest(restaurant.getLatitude(), restaurant.getLongitude(), new LatLng(loc.getLatitude(), loc.getLongitude())) <= 300) {
+                            restaurant.setDistance(distanceRest(restaurant.getLatitude(), restaurant.getLongitude(), new LatLng(loc.getLatitude(), loc.getLongitude())));
+                            restauList.add(restaurant);
+                        }
+                    }
+                    resultLiveData.postValue(restauList);
+                });
 
         return resultLiveData;
     }
 
-    public MutableLiveData<User> getUserFirebase(String uid) {
-        MutableLiveData<User> user = new MutableLiveData<>();
-        Query query = refUser.child(uid);
+    public MutableLiveData<Restaurant> getChoosenRestau(String placedId) {
+        restauList.clear();
+        MutableLiveData<Restaurant> restChoosen = new MutableLiveData<>();
+        db.collection("restaurants").document(placedId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> restChoosen.postValue(documentSnapshot.toObject(Restaurant.class)));
 
-        query.addValueEventListener(new ValueEventListener() {
-
-            @Override
-            public void onDataChange(@androidx.annotation.NonNull DataSnapshot snapshot) {
-                user.postValue(snapshot.getValue(User.class));
-                //setMarkers()
-            }
-
-            @Override
-            public void onCancelled(@androidx.annotation.NonNull DatabaseError error) {
-
-            }
-        });
-        return user;
+        return restChoosen;
     }
 
-    public LiveData<List<User>> getUsers(String uid) {
-        LiveData<List<User>> users = new MutableLiveData<>();
-        refUser.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@androidx.annotation.NonNull DataSnapshot snapshot) {
-                List<User> listUser = new ArrayList<>();
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    listSize++;
-                }
-                Log.d("datasnapshot", "" + listSize);
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    Log.d("datasnapshot", "preIf  " + dataSnapshot.getKey());
-                    incrementeCount();
-                    if (!dataSnapshot.getKey().equals(uid)){
-                        Log.d("datasnapshot", "preIf  " + dataSnapshot.getKey() + " " + uid);
-                        listUser.add(dataSnapshot.getValue(User.class));
-
-                    }
-                }
-                createListUser(listUser, (MutableLiveData<List<User>>) users);
-                listUser.clear();
-            }
-
-            @Override
-            public void onCancelled(@androidx.annotation.NonNull DatabaseError error) {
-
-            }
-        });
-
-        return users;
+    public MutableLiveData<User> getUserFirebase() {
+        MutableLiveData<User> user = new MutableLiveData<>();
+        db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> user.postValue(documentSnapshot.toObject(User.class)));
+        return user;
     }
 
 
     private void createListUser(List<User> user, MutableLiveData<List<User>> userLiveData) {
-            Log.d("datasnapshot", "Passela " + user.size() + " " + user.get(0).getName());
-            userLiveData.setValue(user);
+        Log.d("datasnapshot", "Passela " + user.size() + " " + user.get(0).getName());
+        userLiveData.setValue(user);
     }
 
     private Integer distanceRest(Float lat, Float lon, LatLng loc) {
@@ -292,157 +279,189 @@ public class MapRepository {
         return rate;
     }
 
-    private synchronized void incrementeCount(){
+    private synchronized void incrementeCount() {
         count++;
     }
 
-    private boolean containsRestaurant(MutableLiveData<List<Restaurant>> listRestau, String placeId){
-        boolean contains = false;
-        for (Restaurant restaurant : listRestau.getValue()) {
-            if (restaurant.getPlaceId().equals(placeId)) {
-                contains = true;
-                break;
-            }
-        }
-        return  contains;
+    public MutableLiveData<List<User>> getUsers() {
+        MutableLiveData<List<User>> users = new MutableLiveData<>();
+
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<User> listUser = new ArrayList<>();
+                    for (QueryDocumentSnapshot dataSnapshot : queryDocumentSnapshots) {
+                        if (!dataSnapshot.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
+                            listUser.add(dataSnapshot.toObject(User.class));
+                        }
+                    }
+                    if (listUser.size() > 0) {
+                        createListUser(listUser, users);
+                        listUser.clear();
+                    }
+                });
+
+        return users;
     }
 
     private void addRestaurant(ResultDetails result, String placeId, String picUrl, LatLng loc) {
-        refRest.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@androidx.annotation.NonNull DataSnapshot snapshot) {
-                Log.d("user", "Here");
-                //refUsers.push().setValue(new User(displayName, email, photoUrl.toString()));
-                count = 0;
-                for (DataSnapshot data : snapshot.getChildren()) {
-                    Log.d("data", " data: " + data.getValue().toString());
-                    if (data.getKey().equals(placeId)) {
-                        count++;
+        countUser = 0;
+        db.collection("restaurants").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    Restaurant restaurant = document.toObject(Restaurant.class);
+                    Log.d("testId", "restauID : " + restaurant.getPlaceId() + "  -  " + "placeId : " + placeId);
+                    if (restaurant.getPlaceId().equals(placeId)) {
+                        updateRestau(result, placeId);
+                        countUser++;
+                        break;
                     }
                 }
-                if (count == 0) {
-                    refRest.child(placeId).push().setValue(new Restaurant(result.getGeometry().getLocation().getLat(),
-                            result.getGeometry().getLocation().getLng(), result.getName(),
-                            placeId, rating(result.getRating()),
-                            result.getVicinity(),
-                            distanceRest(result.getGeometry().getLocation().getLat(), result.getGeometry().getLocation().getLng(), loc),
-                            result.getOpeningHours(),
-                            result.getInternationalPhoneNumber(),
-                            picUrl,
-                            result.getWebsite(),
-                            R.drawable.baseline_place_unbook_24,
-                            null));
-                    HashMap<String, Object> addNewRest = new HashMap<>();
-                    addNewRest.put(placeId, new Restaurant(result.getGeometry().getLocation().getLat(),
-                            result.getGeometry().getLocation().getLng(), result.getName(),
-                            placeId, rating(result.getRating()),
-                            result.getVicinity(),
-                            distanceRest(result.getGeometry().getLocation().getLat(), result.getGeometry().getLocation().getLng(), loc),
-                            result.getOpeningHours(),
-                            result.getInternationalPhoneNumber(),
-                            picUrl,
-                            result.getWebsite(),
-                            R.drawable.baseline_place_unbook_24,
-                            null));
-                    refRest.updateChildren(addNewRest);
+                if (countUser == 0) {
+                    newRestau(result, placeId, picUrl);
                 }
-            }
-
-            @Override
-            public void onCancelled(@androidx.annotation.NonNull DatabaseError error) {
-
             }
         });
     }
 
+    private void newRestau(ResultDetails result, String placeId, String picUrl) {
+        Log.d("testId", "restauID : added");
+        db.collection("restaurants").document(placeId)
+                .set(new Restaurant(result.getGeometry().getLocation().getLat(),
+                        result.getGeometry().getLocation().getLng(), result.getName(),
+                        placeId, rating(result.getRating()),
+                        result.getVicinity(),
+                        result.getOpeningHours(),
+                        result.getInternationalPhoneNumber(),
+                        picUrl,
+                        result.getWebsite(),
+                        R.drawable.baseline_place_unbook_24
+                ))
+                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+    }
+
+    private void updateRestau(ResultDetails result, String placeId) {
+        Log.d("testId", "restauID : added");
+        db.collection("restaurants").document(placeId)
+                .update("openingHours", result.getOpeningHours())
+                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+    }
+
     public void eatRestaurant(User user, Restaurant restaurant, String constRestau) {
-        HashMap<String, Object> userMap = new HashMap<>();
-        HashMap<String, Object> restauMap = new HashMap<>();
         switch (constRestau) {
             case DEL_RESTAU:
-                userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), null, false));
-                refUser.updateChildren(userMap);
+
+                db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .update("thisDayRestau", null)
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
+                db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .update("restauChoosen", false)
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
                 restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
-                restauMap.put(restaurant.getPlaceId(), new Restaurant(restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getName(), restaurant.getPlaceId(), restaurant.getRating(), restaurant.getVicinity(), restaurant.getDistance(), restaurant.getOpeningHours(), restaurant.getPhoneNumber(), restaurant.getPicUrl(), restaurant.getWebsite(), restaurant.getMarker(), restaurant.getListUser()));
-                refRest.updateChildren(restauMap);
+                db.collection("restaurants").document(restaurant.getPlaceId())
+                        .update("listUser", restaurant.getListUser())
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
                 break;
+
             case CHAN_RESTAU:
                 delUserRestau(user, user.getThisDayRestau());
-                userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), restaurant, true));
-                refUser.updateChildren(userMap);
+
+                db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .update("thisDayRestau", restaurant)
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
                 restaurant.getListUser().add(user);
-                restauMap.put(restaurant.getPlaceId(), new Restaurant(restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getName(), restaurant.getPlaceId(), restaurant.getRating(), restaurant.getVicinity(), restaurant.getDistance(), restaurant.getOpeningHours(), restaurant.getPhoneNumber(), restaurant.getPicUrl(), restaurant.getWebsite(), restaurant.getMarker(), restaurant.getListUser()));
-                refRest.updateChildren(restauMap);
+                db.collection("restaurants").document(restaurant.getPlaceId())
+                        .update("listUser", restaurant.getListUser())
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
                 break;
+
             case ADD_RESTAU:
-                userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(), restaurant, true));
-                refUser.updateChildren(userMap);
+                db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .update("thisDayRestau", restaurant)
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
+                db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .update("restauChoosen", true)
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
                 restaurant.getListUser().add(user);
-                restauMap.put(restaurant.getPlaceId(), new Restaurant(restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getName(), restaurant.getPlaceId(), restaurant.getRating(), restaurant.getVicinity(), restaurant.getDistance(), restaurant.getOpeningHours(), restaurant.getPhoneNumber(), restaurant.getPicUrl(), restaurant.getWebsite(), restaurant.getMarker(), restaurant.getListUser()));
-                refRest.updateChildren(restauMap);
+                db.collection("restaurants").document(restaurant.getPlaceId())
+                        .update("listUser", restaurant.getListUser())
+                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
                 break;
         }
     }
 
     public void favRestau(User user, Restaurant restaurant, String constRestau) {
-        HashMap<String, Object> userMap = new HashMap<>();
         if (constRestau.equals(UNFAV_RESTAU)) {
+
             user.getFavRestau().removeIf(restaurant1 -> restaurant1.getPlaceId().equals(restaurant.getPlaceId()));
-            userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(),user.getFavRestau(),user.getThisDayRestau(), user.isRestauChoosen()));
-            refUser.updateChildren(userMap);
+            db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    .update("favRestau", user.getFavRestau())
+                    .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                    .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+
         } else if (constRestau.equals(FAV_RESTAU)) {
+
             user.getFavRestau().add(restaurant);
-            userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getFavRestau(),user.getThisDayRestau(), user.isRestauChoosen()));
-            refUser.updateChildren(userMap);
+            db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    .update("favRestau", user.getFavRestau())
+                    .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                    .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
         }
     }
 
-    public void addUser(String displayName, String email, String uid, Uri photoUrl) {
-        refUser.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@androidx.annotation.NonNull DataSnapshot snapshot) {
-                Log.d("user", "Here");
-                countUser = 0;
-                for (DataSnapshot data : snapshot.getChildren()) {
-                    Log.d("data", " data: " + data.getValue().toString());
-                    if (data.child("name").getValue().toString().equals(displayName)) {
-                        Log.d("dataName", " dataName: " + data.child("name").toString() + " displayName: " + displayName);
+    public void addUser(String displayName, String email, Uri photoUrl) {
+        countUser = 0;
+        db.collection("users").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    User user = document.toObject(User.class);
+                    if (user.getEmail().equals(email)) {
                         countUser++;
+                        break;
                     }
                 }
                 if (countUser == 0) {
+                    Log.d("addUser", "Coucou");
                     if (photoUrl != null) {
-                        User user  = new User(displayName, email, photoUrl.toString(), null, null, false);
-                        refUser.child(uid).push().setValue(user);
-                        HashMap<String, Object> addNewUser = new HashMap<>();
-                        addNewUser.put(uid, user);
-                        refUser.updateChildren(addNewUser);
-                    } else {
+                        User user = new User(displayName, email, photoUrl.toString(), null, false);
+                        db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                .set(user)
+                                .addOnFailureListener(e -> Log.d("addUser", "erreur: " + e))
+                                .addOnSuccessListener(documentReference -> Log.d("addUser", "Success"));
 
+                    } else {
                         StorageReference picRef = storage.child(STORAGE_REF + "/" + NAME_PIC);
                         picRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            User user  = new User(displayName, email, uri.toString(), null, null, false);
-                            refUser.child(uid).push().setValue(user);
-                            HashMap<String, Object> addNewUser = new HashMap<>();
-                            addNewUser.put(uid, user);
-                            refUser.updateChildren(addNewUser);
+                            User user = new User(displayName, email, uri.toString(), null, false);
+                            db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                                    .set(user)
+                                    .addOnFailureListener(e -> Log.d("addUser", "erreur: " + e))
+                                    .addOnSuccessListener(documentReference -> Log.d("addUser", "Success"));
                         });
-
                     }
                 }
-
                 EventBus.getDefault().post(new ActivityFragEvent());
-            }
-
-            @Override
-            public void onCancelled(@androidx.annotation.NonNull DatabaseError error) {
-
             }
         });
     }
 
-    public void changePic(String uid, User user, Uri photoUri) {
-        StorageReference picRef = storage.child(uid + "/" + photoUri.getLastPathSegment());
+    public void changePic(User user, Uri photoUri) {
+        StorageReference picRef = storage.child(FirebaseAuth.getInstance().getCurrentUser().getUid() + "/" + photoUri.getLastPathSegment());
         UploadTask uploadTask = picRef.putFile(photoUri);
 
         uploadTask.addOnFailureListener(e -> Log.d("uplaodTask", "" + e.fillInStackTrace()))
@@ -450,29 +469,32 @@ public class MapRepository {
 
         Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
             if (!task.isSuccessful()) {
-                throw  task.getException();
+                throw task.getException();
             }
 
             return picRef.getDownloadUrl();
         }).addOnCompleteListener(task -> {
             Uri downloadUrl = task.getResult();
 
-            HashMap<String, Object> userMap = new HashMap<>();
-            userMap.put(FirebaseAuth.getInstance().getCurrentUser().getUid(), new User(user.getName(), user.getEmail(), downloadUrl.toString(), user.getFavRestau(), user.getThisDayRestau(), user.isRestauChoosen()));
-            refUser.updateChildren(userMap);
+            db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    .update("photoUrl", downloadUrl.toString())
+                    .addOnFailureListener(e -> Log.e("changePic", "erreur : " + e.getMessage()))
+                    .addOnSuccessListener(aVoid -> Log.d("changePic", "Success"));
         });
     }
 
-    public void changeName(String uid, User user) {
-        HashMap<String, Object> usermap = new HashMap<>();
-        usermap.put(uid, user);
-        refUser.updateChildren(usermap);
+    public void changeName(String changeName) {
+        db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                .update("name", changeName)
+                .addOnFailureListener(e -> Log.e("changeName", "erreur : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("changeName", "Success"));
     }
 
     private void delUserRestau(User user, Restaurant restaurant) {
-        HashMap<String, Object> restauMap = new HashMap<>();
         restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
-        restauMap.put(restaurant.getPlaceId(), new Restaurant(restaurant.getLatitude(), restaurant.getLongitude(), restaurant.getName(), restaurant.getPlaceId(), restaurant.getRating(), restaurant.getVicinity(), restaurant.getDistance(), restaurant.getOpeningHours(), restaurant.getPhoneNumber(), restaurant.getPicUrl(), restaurant.getWebsite(), restaurant.getMarker(), restaurant.getListUser()));
-        refRest.updateChildren(restauMap);
+        db.collection("restaurants").document(restaurant.getPlaceId())
+                .update("listUser", restaurant.getListUser())
+                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
     }
 }
