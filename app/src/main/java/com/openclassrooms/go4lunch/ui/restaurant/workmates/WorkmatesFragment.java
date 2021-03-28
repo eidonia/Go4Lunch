@@ -31,12 +31,13 @@ public class WorkmatesFragment extends Fragment {
         View view = binding.getRoot();
         restaurantViewModel = new ViewModelProvider(this.getActivity()).get(RestaurantViewModel.class);
         binding.toolbar.setNavigationOnClickListener(v -> {
-            ((ActivityWithFrag)getActivity()).openDrawer();
+            ((ActivityWithFrag) getActivity()).openDrawer();
         });
 
         binding.listWorkmates.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
 
-        restaurantViewModel.getUserList().observe(getViewLifecycleOwner(), users -> {
+        restaurantViewModel.getUsersFbRoom();
+        restaurantViewModel.getUsersRoom().observe(getViewLifecycleOwner(), users -> {
             adapter = new UserListAdapter(getContext(), LFRAG_ADA);
             adapter.setUserList(users);
             binding.listWorkmates.setAdapter(adapter);

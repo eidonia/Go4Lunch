@@ -7,6 +7,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Outline;
 import android.graphics.Rect;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -32,6 +33,7 @@ import com.bumptech.glide.request.target.Target;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationView;
+import com.google.gson.Gson;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityWithFragBinding;
 import com.openclassrooms.go4lunch.event.RefreshMarkers;
@@ -40,10 +42,10 @@ import com.openclassrooms.go4lunch.models.User;
 import com.openclassrooms.go4lunch.models.details.Period;
 import com.openclassrooms.go4lunch.ui.restaurant.workmates.UserListAdapter;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
-import com.openclassrooms.go4lunch.worker.NotifRestau;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -77,8 +79,6 @@ public class ActivityWithFrag extends AppCompatActivity {
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
         adapter = new UserListAdapter(this, BSD_ADA);
 
-        NotifRestau.startWorker(this);
-
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
@@ -88,6 +88,7 @@ public class ActivityWithFrag extends AppCompatActivity {
         NavigationUI.setupWithNavController(navView, navDrawer);
 
         restaurantViewModel.getListRestaurant().observe(this, restaurants -> this.restaurants = restaurants);
+        restaurantViewModel.getUsersFbRoom();
 
         restaurantViewModel.getUser().observe(this, userFirebase -> {
             user = userFirebase;
@@ -113,9 +114,7 @@ public class ActivityWithFrag extends AppCompatActivity {
         binding.drawerLayout.openDrawer(Gravity.LEFT);
     }
 
-    public void openBottomSheetDialog(Restaurant restaurant, String fragment, GoogleMap googleMap) {
-        Log.d("marker", "bottomsheetdialog");
-        Log.d("listToHashMap", "" + restaurant.getOpeningHours());
+    public void openBottomSheetDialog(Restaurant restaurant, String fragment, GoogleMap googleMap) throws ParseException {
         BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet);
 
         if (fragment.equals("list")) {
@@ -131,7 +130,6 @@ public class ActivityWithFrag extends AppCompatActivity {
         bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                Log.d("newState", "" + newState);
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
 
                 } else if(newState == BottomSheetBehavior.STATE_COLLAPSED){
@@ -159,72 +157,69 @@ public class ActivityWithFrag extends AppCompatActivity {
     }
 
     private void collapsedBottom(Restaurant restaurant, GoogleMap googleMap) {
-        binding.picRestau.setOutlineProvider(new ViewOutlineProvider() {
-            @Override
-            public void getOutline(View view, Outline outline) {
-                outline.setRoundRect(0, 0, view.getWidth(), (int) (view.getHeight() + 40F), 40F);
-            }
-        });
-        binding.picRestau.setClipToOutline(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            binding.picRestau.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), (int) (view.getHeight() + 40F), 40F);
+                }
+            });
+            binding.picRestau.setClipToOutline(true);
+        }
+
 
         binding.nameRestau.setText(restaurant.getName());
         binding.adress.setText(restaurant.getVicinity());
+        binding.chipPeople.setText(String.valueOf(restaurant.getListUser().size()));
 
         if (!restaurant.getOpeningHours().getOpenNow()) {
             binding.chipHours.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_red_dark)));
-            binding.chipHours.setText("Close");
+            binding.chipHours.setText(R.string.restauClose);
         } else {
             binding.chipHours.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_green_dark)));
-            binding.chipHours.setText("Open");
+            binding.chipHours.setText(R.string.restauOpen);
         }
         Glide.with(context).load(restaurant.getPicUrl()).centerCrop().into(binding.picRestau);
-
-        binding.chipDistance.setText("" + restaurant.getDistance() + " m");
-        Log.d("téléphone", "" + restaurant.getPhoneNumber());
-
+        binding.chipDistance.setText(getString(R.string.distanceRestau, restaurant.getDistance()));
         binding.imgPhone.setOnClickListener(v -> dialPhone(restaurant.getPhoneNumber()));
     }
 
-    private void expandedBottom(Restaurant restaurant, GoogleMap googleMap) {
+    private void expandedBottom(Restaurant restaurant, GoogleMap googleMap) throws ParseException {
         binding.textNameRestau.setText(restaurant.getName());
         binding.textAdressRestau.setText(restaurant.getVicinity());
         Glide.with(context).load(restaurant.getPicUrl()).centerCrop().into(binding.restauImg);
-        binding.chipsDistanceExpanded.setText("" + restaurant.getDistance() + " m");
+        binding.chipsDistanceExpanded.setText(getString(R.string.distanceRestau, restaurant.getDistance()));
         binding.phoneImage.setOnClickListener(v -> dialPhone(restaurant.getPhoneNumber()));
 
         Calendar calendar = Calendar.getInstance();
         int day = calendar.get(Calendar.DAY_OF_WEEK);
-        Log.d("chipsTest", "day");
         HashMap<String, String> mapHourRestau = restaurant.setChips(day);
-
         String openCLose = mapHourRestau.get("isOpen");
 
         if (openCLose.equals("true")) {
             int remainTime = Integer.parseInt(mapHourRestau.get("remainTime"));
             String remainTimeStr = mapHourRestau.get("remainTimeStr");
-            Log.d("remainTime", "" + mapHourRestau.get("remainTime"));
             if (remainTime <= 30) {
                 binding.chipsHourExpanded.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_orange_dark)));
-                binding.chipsHourExpanded.setText("ferme dans " + remainTimeStr);
+                binding.chipsHourExpanded.setText(getString(R.string.closeIn, remainTimeStr));
             } else {
                 binding.chipsHourExpanded.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_green_dark)));
-                binding.chipsHourExpanded.setText("Open");
+                binding.chipsHourExpanded.setText(R.string.restauOpen);
             }
         } else if (openCLose.equals("false")) {
             int remainTime = Integer.parseInt(mapHourRestau.get("remainTime"));
             String remainTimeStr = mapHourRestau.get("remainTimeStr");
-            Log.d("remainTime", "" + mapHourRestau.get("remainTime"));
             if (remainTime <= 30) {
                 binding.chipsHourExpanded.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_blue_bright)));
 
-                binding.chipsHourExpanded.setText("ouvre dans " + remainTimeStr);
+                binding.chipsHourExpanded.setText(getString(R.string.openIn, remainTimeStr));
             } else {
                 binding.chipsHourExpanded.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_red_dark)));
-                binding.chipsHourExpanded.setText("Close");
+                binding.chipsHourExpanded.setText(R.string.restauClose);
             }
         } else {
             binding.chipsHourExpanded.setChipBackgroundColor(ColorStateList.valueOf(getResources().getColor(android.R.color.holo_red_dark)));
-            binding.chipsHourExpanded.setText("Close");
+            binding.chipsHourExpanded.setText(R.string.restauClose);
         }
 
         if (user.isRestauChoosen() && user.getThisDayRestau() != null && user.getThisDayRestau().getPlaceId().equals(restaurant.getPlaceId())) {
@@ -292,12 +287,24 @@ public class ActivityWithFrag extends AppCompatActivity {
         });
 
         binding.rvListMatesRestau.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        int idRest = -1;
         if (restaurant.getListUser() != null) {
-            for (User user1 : restaurant.getListUser()) {
-                if (user1.getEmail().equals(user.getEmail())) {
-                    restaurant.getListUser().remove(user1);
+            for (int i = 0; i < restaurant.getListUser().size(); i++) {
+                if (restaurant.getListUser().get(i).getEmail().equals(user.getEmail())) {
+                    idRest = i;
                 }
             }
+            Log.d("containslist", "ici");
+            Gson gson = new Gson();
+            Log.e("gson", "restaurant : " + gson.toJson(restaurant.getListUser()));
+            Log.e("gson", "user : " + gson.toJson(user));
+
+
+            if (idRest != -1) {
+                Log.d("containt", "la");
+                restaurant.getListUser().remove(idRest);
+            }
+
             binding.rvListMatesRestau.setAdapter(adapter);
             adapter.setUserList(restaurant.getListUser());
         }
@@ -305,7 +312,6 @@ public class ActivityWithFrag extends AppCompatActivity {
     }
 
     private void dialPhone(String phoneNumber) {
-        Log.d("téléphone 2", "" + phoneNumber);
         Intent intent = new Intent(Intent.ACTION_DIAL);
         intent.setData(Uri.parse("tel:" + phoneNumber));
         if (intent.resolveActivity(getPackageManager()) != null) {
@@ -315,8 +321,6 @@ public class ActivityWithFrag extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        if (getCurrentFocus() != null)
-        Log.d("currentFocus", "" + getCurrentFocus().getId());
         BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet);
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
@@ -345,7 +349,6 @@ public class ActivityWithFrag extends AppCompatActivity {
         boolean contains = false;
         for (Restaurant item : rest) {
             if (item.getPlaceId().equals(restaurant.getPlaceId())) {
-                Log.d("trueResult", "true but fail");
                 contains = true;
             }
         }
@@ -355,9 +358,7 @@ public class ActivityWithFrag extends AppCompatActivity {
     private boolean getTodayExist(Restaurant restaurant) {
         boolean exist = false;
         for (Period period : restaurant.getOpeningHours().getPeriods()) {
-            Log.d("horaireRestau", " " + period.getClose().getDay());
             if (period.getClose().getDay() == 0){
-                Log.d("horaireRestau", " céchelou ");
                 exist = true;
             }
         }

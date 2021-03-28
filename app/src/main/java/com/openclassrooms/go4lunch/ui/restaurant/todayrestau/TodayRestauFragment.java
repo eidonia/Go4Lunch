@@ -62,7 +62,7 @@ public class TodayRestauFragment extends Fragment {
         binding.textNameRestau.setText(restaurant.getName());
         binding.textAdressRestau.setText(restaurant.getVicinity());
         Glide.with(getContext()).load(restaurant.getPicUrl()).centerCrop().into(binding.restauImg);
-        binding.chipsDistanceExpanded.setText("" + restaurant.getDistance() + " m");
+        binding.chipsDistanceExpanded.setText(getContext().getString(R.string.distanceRestau, restaurant.getDistance()));
         binding.phoneImage.setOnClickListener(v -> dialPhone(restaurant.getPhoneNumber()));
 
         if (user.getFavRestau() != null && containsRestaurant(user.getFavRestau(), restaurant)) {

@@ -1,6 +1,8 @@
 package com.openclassrooms.go4lunch.ui.restaurant.workmates;
 
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.models.User;
+import com.openclassrooms.go4lunch.ui.restaurant.ChatActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +30,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
     private final Context context;
     private final List<User> userList = new ArrayList<>();
     private final String typeFrag;
+    private String name;
 
     public UserListAdapter(Context context, String typeFrag) {
         this.context = context;
@@ -50,18 +54,34 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
                         .override(Target.SIZE_ORIGINAL))
                 .into(holder.imgUser);
         if (typeFrag.equals(LFRAG_ADA)) {
+            if (user.isStatus()) {
+                holder.newMessage.setVisibility(View.VISIBLE);
+            } else {
+                holder.newMessage.setVisibility(View.GONE);
+            }
             if (user.isRestauChoosen()) {
                 holder.restauChosen.setTextColor(context.getResources().getColor(android.R.color.black));
-                holder.restauChosen.setText(user.getThisDayRestau().getName());
+                holder.restauChosen.setText(context.getString(R.string.workmatesEat, user.getName(), user.getThisDayRestauStr()));
             } else {
                 holder.restauChosen.setTextColor(context.getResources().getColor(R.color.greyTextColor));
-                holder.restauChosen.setText("" + user.getName() + " n'a pas choisi de restaurant");
+                holder.restauChosen.setText(context.getString(R.string.workmatesNotEat, user.getName()));
 
             }
         } else {
             holder.restauChosen.setTextColor(context.getResources().getColor(android.R.color.black));
             holder.restauChosen.setText(user.getName());
         }
+
+        holder.itemView.setOnClickListener(view -> {
+            Log.d("TestListUser", "Click");
+            Intent intent = new Intent(context, ChatActivity.class);
+            intent.putExtra("userName", user.getName());
+            intent.putExtra("userEmail", user.getEmail());
+            intent.putExtra("userEjabberd", user.getEjabberdName());
+            context.startActivity(intent);
+            holder.newMessage.setVisibility(View.GONE);
+        });
+
     }
 
     @Override
@@ -76,17 +96,18 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.ViewHo
         notifyDataSetChanged();
     }
 
-
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imgUser;
         TextView restauChosen;
+        TextView newMessage;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
             imgUser = itemView.findViewById(R.id.userImg);
             restauChosen = itemView.findViewById(R.id.restauChoosen);
+            newMessage = itemView.findViewById(R.id.newMessage);
         }
     }
 }

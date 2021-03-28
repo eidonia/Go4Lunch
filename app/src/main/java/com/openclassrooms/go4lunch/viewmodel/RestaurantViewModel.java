@@ -1,12 +1,9 @@
 package com.openclassrooms.go4lunch.viewmodel;
 
 import android.annotation.SuppressLint;
-import android.app.Application;
 import android.net.Uri;
 
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -23,23 +20,24 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 @HiltViewModel
 public class RestaurantViewModel extends ViewModel {
 
-    private MapRepository mapRepository;
-    private final MutableLiveData<String> queryRestau = new MutableLiveData<>();
-    private final LiveData<List<Restaurant>> restauQueryList = Transformations.switchMap(queryRestau, input -> mapRepository.searchRestaurant(input));
+    private final MapRepository mapRepository;
 
     @SuppressLint("MissingPermission")
     @Inject
-    public RestaurantViewModel(MapRepository mapRepository, Application app) {
+    public RestaurantViewModel(MapRepository mapRepository) {
         this.mapRepository = mapRepository;
-
     }
 
     public void setLatLng(LatLng latLng) {
         mapRepository.getNearbyRestaurant(latLng);
     }
 
-    public MutableLiveData<List<User>> getUserList() {
-        return mapRepository.getUsers();
+    public void getUsersFbRoom() {
+        mapRepository.getUsers();
+    }
+
+    public MutableLiveData<List<User>> getUsersRoom() {
+        return mapRepository.getUsersRoom();
     }
 
     public MutableLiveData<List<Restaurant>> getRestauQueryList(String s) {
@@ -50,12 +48,12 @@ public class RestaurantViewModel extends ViewModel {
         return mapRepository.getRestFromFirebase();
     }
 
-    public MutableLiveData<Restaurant> getRestChoosen(String placeId) {
-        return mapRepository.getChoosenRestau(placeId);
-    }
-
     public MutableLiveData<User> getUser() {
         return mapRepository.getUserFirebase();
+    }
+
+    public MutableLiveData<User> getUserFirebaseMessage(String email) {
+        return mapRepository.getUserFirebaseMessage(email);
     }
 
     public void eatRestaurant(User user, Restaurant restaurant, String constRestau) {
@@ -70,8 +68,8 @@ public class RestaurantViewModel extends ViewModel {
         mapRepository.addUser(displayName, email, photoUrl);
     }
 
-    public void changePic(User user, Uri photoUri) {
-        mapRepository.changePic(user, photoUri);
+    public void changePic(Uri photoUri) {
+        mapRepository.changePic(photoUri);
     }
 
     public void changeName(String changeName) {

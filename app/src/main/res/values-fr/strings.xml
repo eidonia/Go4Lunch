@@ -1,0 +1,69 @@
+<resources>
+    <!-- Name App -->
+    <string name="app_name">Go4Lunch</string>
+
+    <!-- Maps -->
+    <string name="map_id">a01dd88fd83492e6</string>
+
+    <!-- Facebook Strings -->
+    <string name="facebook_application_id">973767119787700</string>
+
+    <!-- Twitter Strings -->
+    <string name="twitter_consumer_key" translatable="false">GTPYAz0NnSBFKQXJe5dpKYEWG</string>
+    <string name="twitter_consumer_secret" translatable="false">u1rv8KtiHGURApC5iA6EeTUqlWDe8VSXfjf8sxtXWDtxUijVR2</string>
+
+
+    <string name="title_activity_with_frag">MainActivity</string>
+    <string name="title_home">Carte</string>
+    <string name="title_dashboard">Liste</string>
+    <string name="title_notifications">Collègues</string>
+    <string name="rationale_ask_ok" />
+    <string name="rationale_ask_cancel" />
+    <string name="camera_and_location_rationale" />
+    <string name="search_hint">Search a Restaurant</string>
+
+    <string name="today_restaurant">Restaurant du jour</string>
+    <string name="title_restaurant">Restaurant Favoris</string>
+    <string name="title_settings">Paramètres</string>
+    <string name="title_disconnect">Déconnexion</string>
+    <string name="search">Rechercher</string>
+
+    <string name="profile">Profil</string>
+    <string name="nameText">Changer de nom</string>
+    <string name="pictureText">Changer votre photo</string>
+    <string name="notification">Notification</string>
+    <string name="btnValidate">Valider</string>
+    <string name="btnCancel">Annuler</string>
+    <string name="error">Insérer un nouveau nom</string>
+    <string name="takeAPic">Prenez une photo</string>
+    <string name="chooseAPic">Choisissez une photo</string>
+    <string name="picUpdate">Photo mis à jour</string>
+
+    <string name="disconnect">Déconnexion</string>
+    <string name="textDisco">Voulez-vous vous déconnecter ?</string>
+    <string name="yesDisco">Oui</string>
+    <string name="noDisco">Non</string>
+    <string name="default_notification_channel_id">999</string>
+
+    <string name="distanceRestau">%1$d m</string>
+    <string name="openUntil">Ouvert jusqu\'à  %1$s</string>
+    <string name="close">Fermé - ouvre à %1$s</string>
+    <string name="closeToday">Fermé aujourd\'hui</string>
+    <string name="workmatesNotEat">%1$s n\'a pas encore choisi</string>
+    <string name="workmatesEat">%1$s mange à %2$s</string>
+    <string name="restauClose">Fermé</string>
+    <string name="restauOpen">Ouvert</string>
+    <string name="closeIn">ferme dans %1$s</string>
+    <string name="openIn">ouvre dans %1$s</string>
+    <string name="inviteWorkmates">Invitez vos collègues à y manger !</string>
+    <string name="like">Favoris</string>
+    <string name="call">Appeler</string>
+    <string name="website">Site web</string>
+    <string name="activNotif">Activer les notifications</string>
+
+    <string name="default_input_hint">Entrez votre message</string>
+    <string name="newMessage">Nouveau Message</string>
+    <string name="favRestau">Restaurant Favoris</string>
+    <string name="eatWith">Vous allez manger\u0020</string>
+
+</resources>

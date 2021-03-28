@@ -5,7 +5,7 @@
     <item
         android:id="@+id/navBar_lunch"
         android:icon="@drawable/ic_outline_local_dining_24"
-        android:title="@string/title_restaurant" />
+        android:title="@string/today_restaurant" />
 
 
     <item

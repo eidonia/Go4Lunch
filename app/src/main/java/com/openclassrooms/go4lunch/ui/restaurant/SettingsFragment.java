@@ -160,7 +160,7 @@ public class SettingsFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_FROM_PICTURE && resultCode == RESULT_OK) {
-            restaurantViewModel.changePic(user, photoURI);
+            restaurantViewModel.changePic(photoURI);
             binding.updatePic.setText(R.string.picUpdate);
 
         } else if (requestCode == GET_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
@@ -185,7 +185,7 @@ public class SettingsFragment extends Fragment {
                         }
                     }
 
-                    restaurantViewModel.changePic(user, imageUri);
+                    restaurantViewModel.changePic(imageUri);
                     binding.updatePic.setText(R.string.picUpdate);
                 }
             }

@@ -15,37 +15,56 @@
 
 
     <string name="title_activity_with_frag">MainActivity</string>
-    <string name="title_home">Carte</string>
-    <string name="title_dashboard">Liste</string>
-    <string name="title_notifications">Collègues</string>
+    <string name="title_home">Map</string>
+    <string name="title_dashboard">List</string>
+    <string name="title_notifications">Workmates</string>
     <string name="rationale_ask_ok" />
     <string name="rationale_ask_cancel" />
     <string name="camera_and_location_rationale" />
     <string name="search_hint">Search a Restaurant</string>
 
-    <string name="title_restaurant">Restaurant Favoris</string>
-    <string name="title_settings">Paramètres</string>
-    <string name="title_disconnect">Déconnexion</string>
-    <string name="search">Rechercher</string>
+    <string name="today_restaurant">Today Restaurant</string>
+    <string name="title_restaurant">Favorite Restaurant</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_disconnect">Log out</string>
+    <string name="search">Search</string>
 
-    <string name="profile">Profil</string>
-    <string name="nameText">Changer de nom</string>
-    <string name="pictureText">Changer votre photo</string>
+    <string name="profile">Profile</string>
+    <string name="nameText">Change your name</string>
+    <string name="pictureText">Change your pic</string>
     <string name="notification">Notification</string>
-    <string name="btnValidate">Valider</string>
-    <string name="btnCancel">Annuler</string>
-    <string name="error">Insérer un nouveau nom</string>
-    <string name="takeAPic">Prenez une photo</string>
-    <string name="chooseAPic">Choisissez une photo</string>
-    <string name="picUpdate">Photo mis à jour</string>
+    <string name="btnValidate">confirm</string>
+    <string name="btnCancel">Cancel</string>
+    <string name="error">Enter a new name</string>
+    <string name="takeAPic">Take a pic</string>
+    <string name="chooseAPic">Choose a pic</string>
+    <string name="picUpdate">Picture updated</string>
 
-    <string name="disconnect">Déconnexion</string>
-    <string name="textDisco">Voulez-vous vous déconnecter ?</string>
-    <string name="yesDisco">Oui</string>
-    <string name="noDisco">Non</string>
-
-
+    <string name="disconnect">Log out</string>
+    <string name="textDisco">Are you sure you want to log out?</string>
+    <string name="yesDisco">Yes</string>
+    <string name="noDisco">No</string>
     <string name="default_notification_channel_id">999</string>
 
+    <string name="distanceRestau">%1$d m</string>
+    <string name="openUntil">Open until  %1$s</string>
+    <string name="close">Closed - open at %1$s</string>
+    <string name="closeToday">Closed today</string>
+    <string name="workmatesNotEat">%1$s didn\'t make a choice</string>
+    <string name="workmatesEat">%1$s eats at %2$s</string>
+    <string name="restauClose">Close</string>
+    <string name="restauOpen">Open</string>
+    <string name="closeIn">closes in %1$s</string>
+    <string name="openIn">opens dans %1$s</string>
+    <string name="inviteWorkmates">Invite your workmates !</string>
+    <string name="like">like</string>
+    <string name="call">call</string>
+    <string name="website">website</string>
+    <string name="activNotif">Activate notifications</string>
+
+    <string name="default_input_hint">Type your message</string>
+    <string name="newMessage">New Message</string>
+    <string name="favRestau">Favorite restaurant</string>
+    <string name="eatWith">You\'re eating with\u0020</string>
 
 </resources>

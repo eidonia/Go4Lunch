@@ -7,6 +7,8 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 
+import androidx.room.Room;
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -15,6 +17,9 @@ import com.google.firebase.storage.StorageReference;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.openclassrooms.go4lunch.database.ChatDatabase;
+import com.openclassrooms.go4lunch.database.dao.MessageDao;
+import com.openclassrooms.go4lunch.database.dao.UserDao;
 import com.openclassrooms.go4lunch.network.GoogleMapService;
 
 import javax.inject.Named;
@@ -30,6 +35,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static android.content.Context.LOCATION_SERVICE;
+import static com.openclassrooms.go4lunch.utils.Constante.DB_NAME;
 
 @Module
 @InstallIn(SingletonComponent.class)
@@ -90,4 +96,27 @@ public class NetworkModule {
         return FirebaseFirestore.getInstance();
     }
 
+
+    //CHAT
+
+    @Provides
+    @Singleton
+    public ChatDatabase provideChatDatabase(@ApplicationContext Context context) {
+        return Room.databaseBuilder(context, ChatDatabase.class, DB_NAME)
+                .allowMainThreadQueries()
+                .fallbackToDestructiveMigration()
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    public MessageDao provideMessageDao(ChatDatabase chatDatabase) {
+        return chatDatabase.messageDao();
+    }
+
+    @Provides
+    @Singleton
+    public UserDao provideUserDao(ChatDatabase chatDatabase) {
+        return chatDatabase.userDao();
+    }
 }

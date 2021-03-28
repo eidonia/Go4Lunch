@@ -5,7 +5,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,7 +71,6 @@ public class ListFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() >= 6) {
                     restaurantViewModel.getRestauQueryList(s.toString()).observe(getViewLifecycleOwner(), restaurants -> {
-                        Log.d("Query", "observer " + restaurants.size());
                         //Collections.sort(restaurants, (restaurant, t1) -> restaurant.getDistance().compareTo(t1.getDistance()));
                         restAdapter.updateRestauList(restaurants);
                     });

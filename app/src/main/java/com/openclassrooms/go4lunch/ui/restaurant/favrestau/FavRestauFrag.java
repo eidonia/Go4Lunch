@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.openclassrooms.go4lunch.databinding.FragmentFavRestauBinding;
+import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
 import com.openclassrooms.go4lunch.ui.restaurant.list.ListRestAdapter;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 
@@ -29,6 +30,10 @@ public class FavRestauFrag extends Fragment {
         binding = FragmentFavRestauBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
+
+        binding.toolbar.setNavigationOnClickListener(v -> {
+            ((ActivityWithFrag) getActivity()).openDrawer();
+        });
 
         restAdapter = new ListRestAdapter(getContext());
         binding.listRestau.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));

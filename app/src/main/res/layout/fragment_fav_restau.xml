@@ -25,7 +25,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/colorPrimary"
             app:menu="@menu/top_bar_list"
-            app:navigationIcon="@drawable/ic_outline_menu_24" />
+            app:navigationIcon="@drawable/ic_outline_menu_24"
+            app:title="@string/favRestau" />
     </com.google.android.material.appbar.AppBarLayout>
 
 </FrameLayout>

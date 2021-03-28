@@ -14,6 +14,8 @@ import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.DisconnectionDialogBinding;
 import com.openclassrooms.go4lunch.ui.MainActivity;
 
+import static com.openclassrooms.go4lunch.utils.Constante.LOG_OUT_EJABBERD;
+
 public class LogOutDialFrag extends DialogFragment {
 
     DisconnectionDialogBinding discoBinding;
@@ -28,6 +30,9 @@ public class LogOutDialFrag extends DialogFragment {
         builder.setView(discoBinding.getRoot());
         builder.setPositiveButton(R.string.yesDisco, (dialogInterface, i) -> {
             FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent();
+            intent.setAction(LOG_OUT_EJABBERD);
+            getContext().sendBroadcast(intent);
             startActivity(new Intent(getContext(), MainActivity.class));
         });
 

@@ -29,7 +29,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:hint="Adress"
             android:maxLines="1"
             app:layout_constraintEnd_toStartOf="@id/ratingRest"
             app:layout_constraintStart_toStartOf="parent"
@@ -46,7 +45,6 @@
             android:id="@+id/distanceRest"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="distance"
             android:paddingEnd="5dp"
             app:layout_constraintEnd_toStartOf="@id/imgRestau"
             app:layout_constraintTop_toTopOf="@id/nameRes" />
@@ -55,7 +53,6 @@
             android:id="@+id/nameRes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Name"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -64,7 +61,6 @@
             android:id="@+id/ratingRest"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="rating"
             android:paddingEnd="5dp"
             app:layout_constraintEnd_toStartOf="@id/imgRestau"
             app:layout_constraintTop_toBottomOf="@id/distanceRest">
@@ -93,8 +89,24 @@
                 app:layout_constraintStart_toEndOf="@id/secondStar"
                 app:layout_constraintTop_toTopOf="parent" />
 
-
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <ImageView
+            android:id="@+id/pplEat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_baseline_person_outline_24"
+            app:layout_constraintEnd_toStartOf="@id/imgRestau"
+            app:layout_constraintTop_toBottomOf="@id/ratingRest" />
+
+        <TextView
+            android:id="@+id/pplEatText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@id/pplEat"
+            app:layout_constraintEnd_toStartOf="@id/pplEat"
+            app:layout_constraintTop_toTopOf="@id/pplEat" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -1,35 +1,62 @@
 package com.openclassrooms.go4lunch.models;
 
+import androidx.annotation.NonNull;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
 public class User {
 
-    private String id;
+    @PrimaryKey
+    @NonNull
+    private String email = "";
     private String name;
-    private String email;
     private String photoUrl;
+    @Ignore
     private List<Restaurant> favRestau = new ArrayList<>();
+    @Ignore
     private Restaurant thisDayRestau;
+    private String thisDayRestauStr;
     private boolean isRestauChoosen;
+    private String ejabberdName;
+    @Ignore
+    private String ejabberdPsswd;
+    private boolean status;
 
+    @Ignore
     public User() {
     }
 
-    public User(String name, String email, String photoUrl, Restaurant thisDayRestau, boolean isRestauChoosen) {
+    public User(String name, String email, String photoUrl, String thisDayRestauStr, boolean isRestauChoosen, String ejabberdName) {
+        this.name = name;
+        this.email = email;
+        this.photoUrl = photoUrl;
+        this.thisDayRestauStr = thisDayRestauStr;
+        this.isRestauChoosen = isRestauChoosen;
+        this.ejabberdName = ejabberdName;
+    }
+
+    @Ignore
+    public User(String name, String email, String photoUrl, Restaurant thisDayRestau, boolean isRestauChoosen, String ejabberdName, String ejabberdPsswd) {
         this.name = name;
         this.email = email;
         this.photoUrl = photoUrl;
         this.thisDayRestau = thisDayRestau;
         this.isRestauChoosen = isRestauChoosen;
+        this.ejabberdName = ejabberdName;
+        this.ejabberdPsswd = ejabberdPsswd;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    @Ignore
+    public User(String name, String email, String photoUrl, String ejabberdName) {
+        this.email = email;
+        this.name = name;
+        this.photoUrl = photoUrl;
+        this.ejabberdName = ejabberdName;
     }
 
     public String getName() {
@@ -78,5 +105,37 @@ public class User {
 
     public void setFavRestau(List<Restaurant> favRestau) {
         this.favRestau = favRestau;
+    }
+
+    public String getEjabberdName() {
+        return ejabberdName;
+    }
+
+    public void setEjabberdName(String ejabberdName) {
+        this.ejabberdName = ejabberdName;
+    }
+
+    public String getEjabberdPsswd() {
+        return ejabberdPsswd;
+    }
+
+    public void setEjabberdPsswd(String ejabberdPsswd) {
+        this.ejabberdPsswd = ejabberdPsswd;
+    }
+
+    public String getThisDayRestauStr() {
+        return thisDayRestauStr;
+    }
+
+    public void setThisDayRestauStr(String thisDayRestauStr) {
+        this.thisDayRestauStr = thisDayRestauStr;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 }

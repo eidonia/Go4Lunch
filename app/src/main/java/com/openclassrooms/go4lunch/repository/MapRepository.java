@@ -1,8 +1,11 @@
 package com.openclassrooms.go4lunch.repository;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
@@ -17,12 +20,14 @@ import com.google.android.libraries.places.api.model.TypeFilter;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.openclassrooms.go4lunch.R;
+import com.openclassrooms.go4lunch.database.dao.UserDao;
 import com.openclassrooms.go4lunch.event.ActivityFragEvent;
 import com.openclassrooms.go4lunch.models.Restaurant;
 import com.openclassrooms.go4lunch.models.User;
@@ -34,17 +39,22 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.inject.Inject;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.CompletableObserver;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.observers.DisposableObserver;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subscribers.ResourceSubscriber;
 
 import static com.openclassrooms.go4lunch.utils.Constante.ADD_RESTAU;
 import static com.openclassrooms.go4lunch.utils.Constante.API_KEY;
 import static com.openclassrooms.go4lunch.utils.Constante.CHAN_RESTAU;
+import static com.openclassrooms.go4lunch.utils.Constante.CREATE_USER_EJABBERD;
 import static com.openclassrooms.go4lunch.utils.Constante.DEL_RESTAU;
 import static com.openclassrooms.go4lunch.utils.Constante.FAV_RESTAU;
 import static com.openclassrooms.go4lunch.utils.Constante.NAME_PIC;
@@ -65,20 +75,24 @@ public class MapRepository {
     private final Location loc;
     private final PlacesClient placesClient;
     private final ArrayList<Restaurant> resultPredic = new ArrayList<>();
-    boolean isExist = false;
+    private final boolean isExist = false;
+    private final Context context;
+    private final UserDao userDao;
+
 
     @Inject
-    public MapRepository(GoogleMapService googleMapService, StorageReference storage, FirebaseFirestore db, Location location, Application app) {
+    public MapRepository(GoogleMapService googleMapService, StorageReference storage, FirebaseFirestore db, Location location, Application app, UserDao userDao) {
         this.googleMapService = googleMapService;
         this.storage = storage;
         this.loc = location;
         this.db = db;
         Places.initialize(app, API_KEY);
         placesClient = Places.createClient(app);
+        context = app;
+        this.userDao = userDao;
     }
 
     public void getNearbyRestaurant(LatLng loc) {
-        Log.d("callApi", "Appel");
             String location = "" + loc.latitude + "," + loc.longitude;
             googleMapService.getNearbyRestaurant(location, radius, "restaurant", API_KEY)
                     .subscribeOn(Schedulers.io())
@@ -90,7 +104,6 @@ public class MapRepository {
                     .subscribe(new DisposableObserver<ArrayList<Result>>() {
                         @Override
                         public void onNext(@NonNull ArrayList<Result> results) {
-                            Log.d("onNext", "on Next = here " + results.size());
                             count = 0;
                             listSize = results.size();
                             for (Result result : results) {
@@ -117,7 +130,6 @@ public class MapRepository {
     }
 
     public MutableLiveData<List<Restaurant>> searchRestaurant(String s) {
-        Log.d("QueryTest", "Repo " + s);
         MutableLiveData<List<Restaurant>> resultLiveData = new MutableLiveData<>();
         List<String> placeIdPredic = new ArrayList<>();
         RectangularBounds bounds = RectangularBounds.newInstance(
@@ -133,10 +145,8 @@ public class MapRepository {
                 .build();
 
         placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
-            Log.d("result", "Here");
             for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
                 if (prediction.getDistanceMeters() < 300) {
-                    Log.d("QueryTest", "prediction " + prediction.getPrimaryText(null).toString() + "  " + prediction.getPlaceId());
                     placeIdPredic.add(prediction.getPlaceId());
                 }
             }
@@ -161,7 +171,6 @@ public class MapRepository {
                 .subscribe(new DisposableObserver<ResultDetails>() {
                     @Override
                     public void onNext(@NonNull ResultDetails result) {
-                        Log.d("resultDetails", " 1 " + result.getName());
                         String picUrl = result.getPhotos() == null ? "" :
                                 "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=" + result.getPhotos().get(0).getPhotoReference() + "&key=" + API_KEY;
                         Gson gson =  new Gson();
@@ -169,14 +178,13 @@ public class MapRepository {
                             try {
                                 addRestaurant(result, placeId, picUrl, loc);
                             }catch (Exception e) {
-                                Log.d("resultDetails", "exception " + e.getMessage());
                             }
                         }
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-
+                        Log.e("resultDetails", " error : " + e.getMessage());
                     }
 
                     @Override
@@ -200,7 +208,6 @@ public class MapRepository {
                             }
                         }
                     }
-                    Log.d("QueryTest", "restauFromPredic " + restauFromPredic.size());
                     restauList.postValue(restauFromPredic);
                 });
     }
@@ -224,16 +231,6 @@ public class MapRepository {
         return resultLiveData;
     }
 
-    public MutableLiveData<Restaurant> getChoosenRestau(String placedId) {
-        restauList.clear();
-        MutableLiveData<Restaurant> restChoosen = new MutableLiveData<>();
-        db.collection("restaurants").document(placedId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> restChoosen.postValue(documentSnapshot.toObject(Restaurant.class)));
-
-        return restChoosen;
-    }
-
     public MutableLiveData<User> getUserFirebase() {
         MutableLiveData<User> user = new MutableLiveData<>();
         db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
@@ -242,9 +239,22 @@ public class MapRepository {
         return user;
     }
 
+    public MutableLiveData<User> getUserFirebaseMessage(String email) {
+        MutableLiveData<User> user = new MutableLiveData<>();
+        db.collection("users")
+                .whereEqualTo("email", email)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (DocumentSnapshot snapshot : queryDocumentSnapshots) {
+                        user.postValue(snapshot.toObject(User.class));
+                    }
+                });
+        return user;
+    }
+
 
     private void createListUser(List<User> user, MutableLiveData<List<User>> userLiveData) {
-        Log.d("datasnapshot", "Passela " + user.size() + " " + user.get(0).getName());
         userLiveData.setValue(user);
     }
 
@@ -283,7 +293,7 @@ public class MapRepository {
         count++;
     }
 
-    public MutableLiveData<List<User>> getUsers() {
+    /*public MutableLiveData<List<User>> getUsers() {
         MutableLiveData<List<User>> users = new MutableLiveData<>();
 
         db.collection("users")
@@ -302,6 +312,73 @@ public class MapRepository {
                 });
 
         return users;
+    }*/
+
+    public void getUsers() {
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot dataSnapshot : queryDocumentSnapshots) {
+                        if (!dataSnapshot.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
+                            User dataUser = dataSnapshot.toObject(User.class);
+                            Log.d("testUser", dataUser.getName() + "  " + dataUser.getEmail());
+                            User roomUser;
+                            if (dataUser.isRestauChoosen()) {
+                                Log.d("testUser", dataUser.getThisDayRestau().getName());
+                                roomUser = new User(dataUser.getName(), dataUser.getEmail(), dataUser.getPhotoUrl(), dataUser.getThisDayRestau().getName(), dataUser.isRestauChoosen(), dataUser.getEjabberdName());
+                            } else {
+                                roomUser = new User(dataUser.getName(), dataUser.getEmail(), dataUser.getPhotoUrl(), null, dataUser.isRestauChoosen(), dataUser.getEjabberdName());
+                            }
+                            addUserRoom(roomUser);
+                        }
+                    }
+                });
+    }
+
+    private void addUserRoom(User user) {
+        userDao.insert(user)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new CompletableObserver() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        Log.d("addUserRoom", "Success");
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+
+                    }
+                });
+    }
+
+    public MutableLiveData<List<User>> getUsersRoom() {
+        MutableLiveData<List<User>> listUser = new MutableLiveData<>();
+        userDao.getAllUsers()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new ResourceSubscriber<List<User>>() {
+                    @Override
+                    public void onNext(List<User> users) {
+                        listUser.postValue(users);
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+        return listUser;
     }
 
     private void addRestaurant(ResultDetails result, String placeId, String picUrl, LatLng loc) {
@@ -310,7 +387,6 @@ public class MapRepository {
             if (task.isSuccessful()) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     Restaurant restaurant = document.toObject(Restaurant.class);
-                    Log.d("testId", "restauID : " + restaurant.getPlaceId() + "  -  " + "placeId : " + placeId);
                     if (restaurant.getPlaceId().equals(placeId)) {
                         updateRestau(result, placeId);
                         countUser++;
@@ -325,7 +401,6 @@ public class MapRepository {
     }
 
     private void newRestau(ResultDetails result, String placeId, String picUrl) {
-        Log.d("testId", "restauID : added");
         db.collection("restaurants").document(placeId)
                 .set(new Restaurant(result.getGeometry().getLocation().getLat(),
                         result.getGeometry().getLocation().getLng(), result.getName(),
@@ -337,37 +412,46 @@ public class MapRepository {
                         result.getWebsite(),
                         R.drawable.baseline_place_unbook_24
                 ))
-                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                .addOnFailureListener(e -> Log.e("newRestau", "error : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("newRestau", "Success"));
     }
 
     private void updateRestau(ResultDetails result, String placeId) {
-        Log.d("testId", "restauID : added");
         db.collection("restaurants").document(placeId)
                 .update("openingHours", result.getOpeningHours())
-                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                .addOnFailureListener(e -> Log.e("updateRestau", "error : " + e.getMessage()))
+                .addOnSuccessListener(aVoid -> Log.d("updateRestau", "Success"));
     }
 
     public void eatRestaurant(User user, Restaurant restaurant, String constRestau) {
         switch (constRestau) {
             case DEL_RESTAU:
-
                 db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .update("thisDayRestau", null)
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
 
                 db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .update("restauChoosen", false)
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
 
-                restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
+                } else {
+                    for (User userInList : restaurant.getListUser()) {
+                        if (userInList.getEmail().equals(user.getEmail())) {
+                            restaurant.getListUser().remove(user);
+                            break;
+                        }
+                    }
+                }
+
+
                 db.collection("restaurants").document(restaurant.getPlaceId())
                         .update("listUser", restaurant.getListUser())
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
                 break;
 
             case CHAN_RESTAU:
@@ -375,32 +459,33 @@ public class MapRepository {
 
                 db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .update("thisDayRestau", restaurant)
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
 
                 restaurant.getListUser().add(user);
                 db.collection("restaurants").document(restaurant.getPlaceId())
                         .update("listUser", restaurant.getListUser())
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
                 break;
 
             case ADD_RESTAU:
                 db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .update("thisDayRestau", restaurant)
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
 
                 db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .update("restauChoosen", true)
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
 
-                restaurant.getListUser().add(user);
+                restaurant.getListUser().add(new User(user.getName(), user.getEmail(), user.getPhotoUrl(), user.getEjabberdName()));
                 db.collection("restaurants").document(restaurant.getPlaceId())
                         .update("listUser", restaurant.getListUser())
-                        .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                        .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                        .addOnFailureListener(e -> Log.e("eatRestau", "error : " + e.getMessage()))
+                        .addOnSuccessListener(aVoid -> Log.d("eatRestau", "Success"));
+
                 break;
         }
     }
@@ -408,46 +493,68 @@ public class MapRepository {
     public void favRestau(User user, Restaurant restaurant, String constRestau) {
         if (constRestau.equals(UNFAV_RESTAU)) {
 
-            user.getFavRestau().removeIf(restaurant1 -> restaurant1.getPlaceId().equals(restaurant.getPlaceId()));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                user.getFavRestau().removeIf(restaurant1 -> restaurant1.getPlaceId().equals(restaurant.getPlaceId()));
+            } else {
+                for (Restaurant rest : user.getFavRestau()) {
+                    if (rest.getPlaceId().equals(restaurant.getPlaceId())) {
+                        user.getFavRestau().remove(rest);
+                        break;
+                    }
+                }
+            }
+
+
             db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                     .update("favRestau", user.getFavRestau())
-                    .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                    .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                    .addOnFailureListener(e -> Log.e("favRestau", "error : " + e.getMessage()))
+                    .addOnSuccessListener(aVoid -> Log.d("favRestau", "Success"));
 
         } else if (constRestau.equals(FAV_RESTAU)) {
-
             user.getFavRestau().add(restaurant);
             db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                     .update("favRestau", user.getFavRestau())
-                    .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
-                    .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
+                    .addOnFailureListener(e -> Log.e("favRestau", "error : " + e.getMessage()))
+                    .addOnSuccessListener(aVoid -> Log.d("favRestau", "Success"));
         }
     }
 
     public void addUser(String displayName, String email, Uri photoUrl) {
+        Log.d("json", "ici");
         countUser = 0;
         db.collection("users").get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     User user = document.toObject(User.class);
                     if (user.getEmail().equals(email)) {
+                        Log.d("json", "email1 " + email);
                         countUser++;
                         break;
                     }
                 }
                 if (countUser == 0) {
-                    Log.d("addUser", "Coucou");
+                    Log.d("json", "email2 " + email);
+                    int random = new Random().nextInt(10000);
+                    String ejabberdName = email.split("@")[0] + random;
+                    String ejabberdPasswd = createPasswd(ejabberdName);
+                    Intent intent = new Intent();
+                    intent.setAction(CREATE_USER_EJABBERD);
+                    intent.putExtra("ejabberdName", ejabberdName);
+                    intent.putExtra("ejabberdPasswd", ejabberdPasswd);
+                    context.sendBroadcast(intent);
                     if (photoUrl != null) {
-                        User user = new User(displayName, email, photoUrl.toString(), null, false);
+                        User user = new User(displayName, email, photoUrl.toString(), null, false, ejabberdName, ejabberdPasswd);
                         db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                 .set(user)
                                 .addOnFailureListener(e -> Log.d("addUser", "erreur: " + e))
                                 .addOnSuccessListener(documentReference -> Log.d("addUser", "Success"));
 
                     } else {
+                        Log.d("json", "blob " + email + " " + ejabberdName + " " + ejabberdPasswd);
                         StorageReference picRef = storage.child(STORAGE_REF + "/" + NAME_PIC);
                         picRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            User user = new User(displayName, email, uri.toString(), null, false);
+                            Log.d("json", "blob " + email + " " + ejabberdName + " " + ejabberdPasswd);
+                            User user = new User(displayName, email, uri.toString(), null, false, ejabberdName, ejabberdPasswd);
                             db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                     .set(user)
                                     .addOnFailureListener(e -> Log.d("addUser", "erreur: " + e))
@@ -460,12 +567,21 @@ public class MapRepository {
         });
     }
 
-    public void changePic(User user, Uri photoUri) {
+    private String createPasswd(String ejabberdName) {
+        String passwd = ejabberdName.replace("a", "A");
+        passwd = passwd.replace("e", "3");
+        passwd = passwd.replace("i", "I");
+        passwd = passwd.replace("o", "0");
+        passwd = passwd.replace("u", "U");
+        return passwd;
+    }
+
+    public void changePic(Uri photoUri) {
         StorageReference picRef = storage.child(FirebaseAuth.getInstance().getCurrentUser().getUid() + "/" + photoUri.getLastPathSegment());
         UploadTask uploadTask = picRef.putFile(photoUri);
 
-        uploadTask.addOnFailureListener(e -> Log.d("uplaodTask", "" + e.fillInStackTrace()))
-                .addOnSuccessListener(taskSnapshot -> Log.d("uplaodTask", "Success"));
+        uploadTask.addOnFailureListener(e -> Log.d("changePic", "error : " + e.getMessage()))
+                .addOnSuccessListener(taskSnapshot -> Log.d("changePic", "Success"));
 
         Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
             if (!task.isSuccessful()) {
@@ -478,7 +594,7 @@ public class MapRepository {
 
             db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                     .update("photoUrl", downloadUrl.toString())
-                    .addOnFailureListener(e -> Log.e("changePic", "erreur : " + e.getMessage()))
+                    .addOnFailureListener(e -> Log.e("changePic", "error : " + e.getMessage()))
                     .addOnSuccessListener(aVoid -> Log.d("changePic", "Success"));
         });
     }
@@ -486,15 +602,24 @@ public class MapRepository {
     public void changeName(String changeName) {
         db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                 .update("name", changeName)
-                .addOnFailureListener(e -> Log.e("changeName", "erreur : " + e.getMessage()))
+                .addOnFailureListener(e -> Log.e("changeName", "error : " + e.getMessage()))
                 .addOnSuccessListener(aVoid -> Log.d("changeName", "Success"));
     }
 
     private void delUserRestau(User user, Restaurant restaurant) {
-        restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            restaurant.getListUser().removeIf(user1 -> user1.getEmail().equals(user.getEmail()));
+        } else {
+            for (User userInList : restaurant.getListUser()) {
+                if (userInList.getEmail().equals(user.getEmail())) {
+                    restaurant.getListUser().remove(user);
+                    break;
+                }
+            }
+        }
         db.collection("restaurants").document(restaurant.getPlaceId())
                 .update("listUser", restaurant.getListUser())
-                .addOnFailureListener(e -> Log.e("delUser", "erreur : " + e.getMessage()))
+                .addOnFailureListener(e -> Log.e("delUser", "error : " + e.getMessage()))
                 .addOnSuccessListener(aVoid -> Log.d("delUser", "Success"));
     }
 }

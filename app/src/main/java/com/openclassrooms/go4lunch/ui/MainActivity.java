@@ -11,6 +11,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Base64;
@@ -32,13 +33,16 @@ import com.openclassrooms.go4lunch.R;
 import com.openclassrooms.go4lunch.databinding.ActivityMainBinding;
 import com.openclassrooms.go4lunch.event.ActivityFragEvent;
 import com.openclassrooms.go4lunch.ui.restaurant.ActivityWithFrag;
+import com.openclassrooms.go4lunch.utils.ConnectionService;
 import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
+import com.openclassrooms.go4lunch.worker.NotifRestau;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,6 +52,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 import pub.devrel.easypermissions.EasyPermissions;
 import pub.devrel.easypermissions.PermissionRequest;
 
+import static com.openclassrooms.go4lunch.utils.Constante.LOG_IN_EJABBERD;
 import static com.openclassrooms.go4lunch.utils.Constante.RC_SIGN_IN;
 
 @AndroidEntryPoint
@@ -59,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private RestaurantViewModel restaurantViewModel;
     private ActivityMainBinding binding;
     private Handler handler;
-    private final String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+    private final String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO};
     private Location location;
     private LocationManager locationManager;
 
@@ -69,13 +74,31 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            EasyPermissions.requestPermissions(
+                    new PermissionRequest.Builder(this, RC_CAMERA_AND_LOCATION, perms)
+                            .setRationale(R.string.camera_and_location_rationale)
+                            .setPositiveButtonText(R.string.rationale_ask_ok)
+                            .setNegativeButtonText(R.string.rationale_ask_cancel)
+                            .build());
+        } else {
+            createUi();
+        }
 
-        EasyPermissions.requestPermissions(
-                new PermissionRequest.Builder(this, RC_CAMERA_AND_LOCATION, perms)
-                        .setRationale(R.string.camera_and_location_rationale)
-                        .setPositiveButtonText(R.string.rationale_ask_ok)
-                        .setNegativeButtonText(R.string.rationale_ask_cancel)
-                        .build());
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(
+                    "com.openclassrooms.go4lunch",
+                    PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.d("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+
+        } catch (NoSuchAlgorithmException e) {
+
+        }
 
 
         try {
@@ -123,19 +146,18 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             if (resultCode == RESULT_OK) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                Log.e("jsonUSer", user.getDisplayName() + " " + user.getPhotoUrl() + " " + user.getEmail());
                 if (user.getPhotoUrl() == null) {
-                    Log.d("addUser", "photoUrl null");
                     restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), null);
                 } else {
                     restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
                 }
             } else {
-                Log.d("connection", "" + response.getError().getErrorCode());
+                Log.e("connectionFirebase", "" + response.getError().getErrorCode());
             }
         }
     }
-
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -146,6 +168,18 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @SuppressLint("MissingPermission")
     @Override
     public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+        createUi();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void createUi() {
+        try {
+            NotifRestau.startWorker(this);
+        } catch (ParseException e) {
+            Log.e("testHourNotif", "error : " + e.getMessage());
+        }
+        Intent intent = new Intent(this, ConnectionService.class);
+        startService(intent);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200, 30, this);
         Criteria criteria = new Criteria();
@@ -154,17 +188,28 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
         restaurantViewModel.setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         handler = new Handler();
         Runnable runnable = () -> {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user != null) {
-                restaurantViewModel.getUser();
+                restaurantViewModel.getUser().observe(this, user1 -> {
+                    prefs.edit()
+                            .putString("xmpp_jid", user1.getEjabberdName())
+                            .apply();
+
+                    Intent sendIntent = new Intent();
+                    sendIntent.setAction(LOG_IN_EJABBERD);
+                    sendIntent.putExtra("userJid", user1.getEjabberdName());
+                    sendIntent.putExtra("psswdJid", user1.getEjabberdPsswd());
+                    sendBroadcast(sendIntent);
+                });
                 startActivity(new Intent(this, ActivityWithFrag.class));
             } else {
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 prefs.edit()
                         .putBoolean("isNotifActiv", true)
                         .apply();
+
                 connectFirebase();
             }
         };
@@ -186,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     @Override
     public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
-            finish();
+        finish();
     }
 
     @Override
@@ -196,6 +241,28 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     @Subscribe
     public void onLauchActivityFrag(ActivityFragEvent event) {
-        startActivity(new Intent(MainActivity.this, ActivityWithFrag.class));
+        restaurantViewModel.getUser().observe(this, user1 -> {
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(LOG_IN_EJABBERD);
+            sendIntent.putExtra("userJid", user1.getEjabberdName());
+            sendIntent.putExtra("psswdJid", user1.getEjabberdPsswd());
+            sendBroadcast(sendIntent);
+            startActivity(new Intent(MainActivity.this, ActivityWithFrag.class));
+        });
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(@NonNull String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(@NonNull String provider) {
+
     }
 }

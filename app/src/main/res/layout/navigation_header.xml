@@ -9,7 +9,7 @@
         android:id="@+id/nameApp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Go4Lunch"
+        android:text="@string/app_name"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -47,9 +47,12 @@
         app:layout_constraintTop_toBottomOf="@id/userName"
         app:layout_constraintBottom_toBottomOf="@id/imgUser"
         android:layout_marginStart="10dp"
-        android:textSize="15sp"
+        android:autoSizeMaxTextSize="15sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="2sp"
+        android:autoSizeTextType="uniform"
         app:layout_constraintStart_toEndOf="@id/imgUser"
         app:layout_constraintEnd_toEndOf="parent"
-        android:textColor="@android:color/white"/>
+        android:textColor="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

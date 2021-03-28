@@ -8,7 +8,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +39,7 @@ import com.openclassrooms.go4lunch.viewmodel.RestaurantViewModel;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -80,7 +80,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
 
         restaurantViewModel.getListRestaurant().observe(getViewLifecycleOwner(), restaurants -> {
-            Log.d("TestObs", "passaLa " + restaurants.size());
             try {
                 MapsInitializer.initialize(getActivity().getApplicationContext());
             } catch (Exception e) {
@@ -115,17 +114,18 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
         rlp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, 0);
         rlp.addRule(RelativeLayout.ALIGN_PARENT_START);
-        Log.d("LatLong", "" + location.getLatitude() + " " + location.getLongitude());
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 17.0f);
         googleMap.animateCamera(update);
 
-        Log.d("restaurant", "maps " + restaurants.size());
         setMarkers(restaurants);
 
         googleMap.setOnMarkerClickListener(marker -> {
             Restaurant restaurant = hashMap.get(marker);
-            ((ActivityWithFrag) getActivity()).openBottomSheetDialog(restaurant, "maps", googleMap);
-            Log.d("marker", " " + restaurant.getName() + " " + restaurant.getPhoneNumber() + " " + restaurant.getPlaceId());
+            try {
+                ((ActivityWithFrag) getActivity()).openBottomSheetDialog(restaurant, "maps", googleMap);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
             return true;
         });
 
@@ -141,7 +141,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() >= 6) {
                     restaurantViewModel.getRestauQueryList(s.toString()).observe(getViewLifecycleOwner(), restaurants -> {
-                        Log.d("Query", "observer " + restaurants.size());
                         googleMap.clear();
                         setMarkers(restaurants);
                     });

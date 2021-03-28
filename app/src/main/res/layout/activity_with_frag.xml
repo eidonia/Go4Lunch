@@ -93,7 +93,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:enabled="false"
-                    android:text="2"
                     app:chipBackgroundColor="@android:color/transparent"
                     app:chipIcon="@drawable/ic_baseline_person_outline_24" />
 
@@ -127,7 +126,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:layout_marginTop="3dp"
-                    android:hint="Name Restaurant"
                     android:textAppearance="@style/TextAppearance.AppCompat.Title"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -137,7 +135,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
-                    android:hint="Adresse"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/textNameRestau" />
 
@@ -164,7 +161,7 @@
                     android:id="@+id/likeImage"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
-                    android:backgroundTint="@android:color/transparent"
+                    android:background="@android:color/transparent"
                     android:src="@drawable/ic_outline_star_rate_24"
                     android:tint="@color/colorPrimary"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -176,7 +173,7 @@
                     android:id="@+id/websiteImage"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
-                    android:backgroundTint="@android:color/transparent"
+                    android:background="@android:color/transparent"
                     android:src="@drawable/ic_outline_public_24"
                     android:tint="@color/colorPrimary"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -187,7 +184,7 @@
                     android:id="@+id/likeText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="like"
+                    android:text="@string/like"
                     android:textAllCaps="true"
                     android:textColor="@color/colorPrimary"
                     android:textStyle="bold"
@@ -199,7 +196,7 @@
                     android:id="@+id/phoneText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="call"
+                    android:text="@string/call"
                     android:textAllCaps="true"
                     android:textColor="@color/colorPrimary"
                     android:textStyle="bold"
@@ -211,7 +208,7 @@
                     android:id="@+id/websiteText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="website"
+                    android:text="@string/website"
                     android:textAllCaps="true"
                     android:textColor="@color/colorPrimary"
                     android:textStyle="bold"
@@ -271,6 +268,7 @@
 
     </LinearLayout>
 
+
     <androidx.drawerlayout.widget.DrawerLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
@@ -317,6 +315,5 @@
             app:menu="@menu/nav_items" />
 
     </androidx.drawerlayout.widget.DrawerLayout>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
