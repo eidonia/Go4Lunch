@@ -35,7 +35,7 @@ public class FavRestauFrag extends Fragment {
             ((ActivityWithFrag) getActivity()).openDrawer();
         });
 
-        restAdapter = new ListRestAdapter(getContext());
+        restAdapter = new ListRestAdapter(getActivity());
         binding.listRestau.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         binding.listRestau.setAdapter(restAdapter);
 
