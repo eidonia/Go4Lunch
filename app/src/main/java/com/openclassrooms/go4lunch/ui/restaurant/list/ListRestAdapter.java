@@ -76,7 +76,8 @@ public class ListRestAdapter extends RecyclerView.Adapter<ListRestAdapter.ViewHo
 
         Calendar calendar = Calendar.getInstance();
         int day = calendar.get(Calendar.DAY_OF_WEEK);
-        HashMap<String, String> mapHourRestau = null;
+        Log.d("nullRestau", "error : " + day);
+        HashMap<String, String> mapHourRestau = new HashMap<>();
         try {
             mapHourRestau = restaurant.setChips(day);
         } catch (ParseException e) {

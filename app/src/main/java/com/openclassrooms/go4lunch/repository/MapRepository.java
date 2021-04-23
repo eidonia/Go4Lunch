@@ -233,6 +233,7 @@ public class MapRepository {
 
     public MutableLiveData<User> getUserFirebase() {
         MutableLiveData<User> user = new MutableLiveData<>();
+        Log.d("json", "user : " + FirebaseAuth.getInstance().getCurrentUser().getUid());
         db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> user.postValue(documentSnapshot.toObject(User.class)));
@@ -533,15 +534,15 @@ public class MapRepository {
                     }
                 }
                 if (countUser == 0) {
-                    Log.d("json", "email2 " + email);
+                    Log.d("BootB", "email2 " + email + " - " + FirebaseAuth.getInstance().getCurrentUser().getUid());
                     int random = new Random().nextInt(10000);
                     String ejabberdName = email.split("@")[0] + random;
+                    Log.d("BootB", "email2 " + ejabberdName);
                     String ejabberdPasswd = createPasswd(ejabberdName);
                     Intent intent = new Intent();
                     intent.setAction(CREATE_USER_EJABBERD);
                     intent.putExtra("ejabberdName", ejabberdName);
                     intent.putExtra("ejabberdPasswd", ejabberdPasswd);
-                    context.sendBroadcast(intent);
                     if (photoUrl != null) {
                         User user = new User(displayName, email, photoUrl.toString(), null, false, ejabberdName, ejabberdPasswd);
                         db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
@@ -553,14 +554,16 @@ public class MapRepository {
                         Log.d("json", "blob " + email + " " + ejabberdName + " " + ejabberdPasswd);
                         StorageReference picRef = storage.child(STORAGE_REF + "/" + NAME_PIC);
                         picRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            Log.d("json", "blob " + email + " " + ejabberdName + " " + ejabberdPasswd);
+                            Log.d("json", "blob " + email + " " + ejabberdName + " " + FirebaseAuth.getInstance().getCurrentUser().getUid());
                             User user = new User(displayName, email, uri.toString(), null, false, ejabberdName, ejabberdPasswd);
+                            Log.d("json", "userCreated " + user.getEjabberdName() + " - " + FirebaseAuth.getInstance().getCurrentUser().getUid());
                             db.collection("users").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                     .set(user)
                                     .addOnFailureListener(e -> Log.d("addUser", "erreur: " + e))
                                     .addOnSuccessListener(documentReference -> Log.d("addUser", "Success"));
                         });
                     }
+                    context.sendBroadcast(intent);
                 }
                 EventBus.getDefault().post(new ActivityFragEvent());
             }

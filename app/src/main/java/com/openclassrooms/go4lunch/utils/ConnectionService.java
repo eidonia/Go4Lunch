@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 import org.jivesoftware.smack.SmackException;
@@ -23,7 +24,7 @@ import java.io.IOException;
 
 public class ConnectionService extends Service {
 
-    public static final String UI_AUTHENTICATED = "com.chronopost.xmppchat.uiauthenticated";
+    public static final String UI_AUTHENTICATED = "com.openclass.go4unch.uiauthenticated";
 
     public static XmppConnection.ConnectionState sConnectionState;
     public static XmppConnection.LoggedInState sLoggedInState;
@@ -77,6 +78,8 @@ public class ConnectionService extends Service {
         mHandler.post(() -> {
             if (mConnection != null) {
                 mConnection.disconnect();
+            } else {
+
             }
         });
     }
@@ -106,6 +109,7 @@ public class ConnectionService extends Service {
         return Service.START_STICKY;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void startMyOwnForeground() {
         String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
         String channelName = "My Background Service";
@@ -123,11 +127,5 @@ public class ConnectionService extends Service {
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
         startForeground(2, notification);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        stop();
     }
 }

@@ -14,6 +14,7 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 
@@ -121,9 +122,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.GoogleBuilder().build(),
-                new AuthUI.IdpConfig.FacebookBuilder().build(),
-                new AuthUI.IdpConfig.TwitterBuilder().build(),
-                new AuthUI.IdpConfig.EmailBuilder().build()
+                new AuthUI.IdpConfig.FacebookBuilder().build()
         );
 
         startActivityForResult(
@@ -146,13 +145,18 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             if (resultCode == RESULT_OK) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
+                Intent intent = new Intent(this, ConnectionService.class);
+                startService(intent);
                 Log.e("jsonUSer", user.getDisplayName() + " " + user.getPhotoUrl() + " " + user.getEmail());
-                if (user.getPhotoUrl() == null) {
-                    restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), null);
-                } else {
-                    restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
-                }
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(() -> {
+                    if (user.getPhotoUrl() == null) {
+                        restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), null);
+                    } else {
+                        restaurantViewModel.addUser(user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
+                    }
+                }, 3000);
+
             } else {
                 Log.e("connectionFirebase", "" + response.getError().getErrorCode());
             }
@@ -178,8 +182,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         } catch (ParseException e) {
             Log.e("testHourNotif", "error : " + e.getMessage());
         }
-        Intent intent = new Intent(this, ConnectionService.class);
-        startService(intent);
+
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200, 30, this);
         Criteria criteria = new Criteria();
@@ -193,7 +196,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         Runnable runnable = () -> {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user != null) {
+                Intent intent = new Intent(this, ConnectionService.class);
+                startService(intent);
                 restaurantViewModel.getUser().observe(this, user1 -> {
+                    Log.d("json", "user : " + user1.getName());
                     prefs.edit()
                             .putString("xmpp_jid", user1.getEjabberdName())
                             .apply();

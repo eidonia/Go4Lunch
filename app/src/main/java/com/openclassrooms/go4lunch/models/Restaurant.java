@@ -243,15 +243,19 @@ public class Restaurant {
         Period secondPeriod = periods.get(1);
 
         Date dateNow = sdf.parse(thisTime);
+
         String closeFirstPeriod = firstPeriod.getClose().getTime();
         String closeFirstPeriodTemp = closeFirstPeriod.substring(0, 2) + ":" + closeFirstPeriod.substring(2);
         Date firstPeriodClose = sdf.parse(closeFirstPeriodTemp);
+
         String closeSecondPeriod = secondPeriod.getClose().getTime();
         String closeSecondPeriodTemp = closeSecondPeriod.substring(0, 2) + ":" + closeSecondPeriod.substring(2);
         Date secondPeriodClose = sdf.parse(closeSecondPeriodTemp);
+
         String openFirstPeriod = firstPeriod.getOpen().getTime();
         String openFirstPeriodTemp = openFirstPeriod.substring(0, 2) + ":" + openFirstPeriod.substring(2);
         Date firstPeriodOpen = sdf.parse(openFirstPeriodTemp);
+
         String openSecondPeriod = secondPeriod.getOpen().getTime();
         String openSecondPeriodTemp = openSecondPeriod.substring(0, 2) + ":" + openSecondPeriod.substring(2);
         Date secondPeriodOpen = sdf.parse(openSecondPeriodTemp);
@@ -286,9 +290,11 @@ public class Restaurant {
                 remainTime = actualTimeInt - closeSecondPeriodInt;
                 remainTimeStr = calTime(dateNow, secondPeriodClose);
             } else if (actualTimeInt > openFirstPeriodInt && actualTimeInt < closeFirstPeriodInt) {
+                Log.d("testFirstPeriod", "actual :" + actualTimeInt + " - openfirst : " + openFirstPeriodInt + " - closefirst : " + closeFirstPeriodInt);
                 hourMap.put("hour", closeFirstPeriodTemp);
                 remainTime = actualTimeInt - closeFirstPeriodInt;
                 remainTimeStr = calTime(dateNow, firstPeriodClose);
+                Log.d("testFirstPeriod", " remain : " + remainTimeStr);
             }
         } else { //CLOSE
             hourMap.put("isOpen", openNow.toString());
