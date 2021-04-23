@@ -45,7 +45,7 @@ public class ListFragment extends Fragment {
         binding = FragmentListBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
 
-        restAdapter = new ListRestAdapter(getContext());
+        restAdapter = new ListRestAdapter(getActivity());
         binding.listRestau.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         binding.listRestau.setAdapter(restAdapter);
 
