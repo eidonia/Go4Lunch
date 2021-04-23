@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/lunch_portrait_v1">
+
+    <TextView
+        android:id="@+id/nameApp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.2"
+        android:textColor="@android:color/white"
+        android:textSize="40sp"
+        android:textStyle="bold"/>
+
+    <ImageView
+        android:id="@+id/imgUser"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="15dp"
+        app:layout_constraintTop_toBottomOf="@id/nameApp"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="20dp"/>
+
+    <TextView
+        android:id="@+id/userName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/imgUser"
+        app:layout_constraintBottom_toTopOf="@id/userEmail"
+        android:layout_marginStart="10dp"
+        android:textSize="15sp"
+        app:layout_constraintStart_toEndOf="@id/imgUser"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textColor="@android:color/white"/>
+
+    <TextView
+        android:id="@+id/userEmail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/userName"
+        app:layout_constraintBottom_toBottomOf="@id/imgUser"
+        android:layout_marginStart="10dp"
+        android:autoSizeMaxTextSize="15sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="2sp"
+        android:autoSizeTextType="uniform"
+        app:layout_constraintStart_toEndOf="@id/imgUser"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textColor="@android:color/white" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

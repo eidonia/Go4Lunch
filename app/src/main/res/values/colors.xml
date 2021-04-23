@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#FF8A50</color>
+    <color name="colorPrimaryDark">#c56200</color>
+    <color name="colorAccent">#5f4339</color>
+    <color name="colorCircle">#0C9FB4F4</color>
+
+    <color name="yellowStar">#FBC02D</color>
+    <color name="greyTextColor">#6E6D6C</color>
+
+    <color name="colorPrimaryLight">#73E8FF</color>
+    <color name="colorSecondary">#1565C0</color>
+    <color name="colorSecondaryLight">#5E92F3</color>
+    <color name="colorSecondaryDark">#003C8F</color>
+    <color name="backgroundDialFrag">#C6C3C3</color>
+    <color name="backCardCall">#3FA143</color>
+    <color name="colorTitleTopBar">#FFFFFF</color>
+    <color name="backBtnRecog">#16B61F</color>
+    <color name="backBtnStopRecog">#D60505</color>
+
+    <color name="blue">#4099FF</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="sinch_purple">#63029d</color>
+    <color name="sinch_purple_darker">#ff380258</color>
+    <color name="off_white">#fffafafa</color>
+    <color name="dark_gray">#ffb3b3b3</color>
+    <color name="very_dark_gray">#636363</color>
+    <color name="u_blue_light">#4A90E2</color>
+    <color name="u_blue">#4A90E2</color>
+    <color name="u_blue_darker">#ff31649a</color>
+    <color name="twinder_purple_2">#D01FA4</color>
+    <color name="bold_username">#4D4D4D</color>
+    <color name="faint_real_name">#999999</color>
+    <color name="facebook_blue">#3B5998</color>
+    <color name="main_color_gray">#7d7d7d</color>
+
+    <color name="default_chat_message_background_color_rcv">@color/white</color>
+    <color name="default_chat_message_background_color_send">@color/white</color>
+
+    <color name="default_bubble_color_rcv">@color/black</color>
+    <color name="default_bubble_color_send">@color/white</color>
+
+    <color name="default_tstamp_color_rcv">@color/off_white</color>
+    <color name="default_tstamp_color_send">@color/main_color_gray</color>
+
+    <color name="default_message_color_rcv">@color/white</color>
+    <color name="default_message_color_send">@color/white</color>
+</resources>

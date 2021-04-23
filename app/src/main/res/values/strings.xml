@@ -1,0 +1,70 @@
+<resources>
+    <!-- Name App -->
+    <string name="app_name">Go4Lunch</string>
+
+    <!-- Maps -->
+    <string name="map_id">a01dd88fd83492e6</string>
+
+    <!-- Facebook Strings -->
+    <string name="facebook_application_id">973767119787700</string>
+    <string name="fb_login_protocol_scheme">fb973767119787700</string>
+
+    <!-- Twitter Strings -->
+    <string name="twitter_consumer_key" translatable="false">GTPYAz0NnSBFKQXJe5dpKYEWG</string>
+    <string name="twitter_consumer_secret" translatable="false">u1rv8KtiHGURApC5iA6EeTUqlWDe8VSXfjf8sxtXWDtxUijVR2</string>
+
+
+    <string name="title_activity_with_frag">MainActivity</string>
+    <string name="title_home">Map</string>
+    <string name="title_dashboard">List</string>
+    <string name="title_notifications">Workmates</string>
+    <string name="rationale_ask_ok" />
+    <string name="rationale_ask_cancel" />
+    <string name="camera_and_location_rationale" />
+    <string name="search_hint">Search a Restaurant</string>
+
+    <string name="today_restaurant">Today Restaurant</string>
+    <string name="title_restaurant">Favorite Restaurant</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_disconnect">Log out</string>
+    <string name="search">Search</string>
+
+    <string name="profile">Profile</string>
+    <string name="nameText">Change your name</string>
+    <string name="pictureText">Change your pic</string>
+    <string name="notification">Notification</string>
+    <string name="btnValidate">confirm</string>
+    <string name="btnCancel">Cancel</string>
+    <string name="error">Enter a new name</string>
+    <string name="takeAPic">Take a pic</string>
+    <string name="chooseAPic">Choose a pic</string>
+    <string name="picUpdate">Picture updated</string>
+
+    <string name="disconnect">Log out</string>
+    <string name="textDisco">Are you sure you want to log out?</string>
+    <string name="yesDisco">Yes</string>
+    <string name="noDisco">No</string>
+    <string name="default_notification_channel_id">999</string>
+
+    <string name="distanceRestau">%1$d m</string>
+    <string name="openUntil">Open until  %1$s</string>
+    <string name="close">Closed - open at %1$s</string>
+    <string name="closeToday">Closed today</string>
+    <string name="workmatesNotEat">%1$s didn\'t make a choice</string>
+    <string name="workmatesEat">%1$s eats at %2$s</string>
+    <string name="restauClose">Close</string>
+    <string name="restauOpen">Open</string>
+    <string name="closeIn">closes in %1$s</string>
+    <string name="openIn">opens dans %1$s</string>
+    <string name="inviteWorkmates">Invite your workmates !</string>
+    <string name="like">like</string>
+    <string name="call">call</string>
+    <string name="website">website</string>
+    <string name="activNotif">Activate notifications</string>
+
+    <string name="default_input_hint">Type your message</string>
+    <string name="newMessage">New Message</string>
+    <string name="favRestau">Favorite restaurant</string>
+    <string name="eatWith">You\'re eating with\u0020</string>
+
+</resources>
