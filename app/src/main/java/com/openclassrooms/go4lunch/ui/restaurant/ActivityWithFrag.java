@@ -196,8 +196,6 @@ public class ActivityWithFrag extends AppCompatActivity {
         HashMap<String, String> mapHourRestau = restaurant.setChips(day);
         String openCLose = mapHourRestau.get("isOpen");
 
-        Log.d("openRestau", "openAt : " + restaurant.getOpeningHours().periods.get(7).open.getTime() + " - closeAt : " + restaurant.getOpeningHours().periods.get(7).close.getTime() + " - " + mapHourRestau.get("remainTimeStr"));
-
         if (openCLose.equals("true")) {
             int remainTime = Integer.parseInt(mapHourRestau.get("remainTime"));
             String remainTimeStr = mapHourRestau.get("remainTimeStr");
