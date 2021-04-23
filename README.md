@@ -44,9 +44,9 @@ La page des paramètres permet de change de nom, d'image et d'activer ou désact
 
 Le menu permet d'avoir accès à son restaurant du jour si on l'a choisi, ses restaurants favoris, les paramètres et de se déconnecter de l'application
 
-![imgur](https://i.imgur.com/C6sbNR6.png) 
+![imgur](https://i.imgur.com/qNYQqmn.png) 
 
-On peut utilser Gmail, Facebook, Twitter ou un email pour s'inscrire
+On peut utilser Gmail et Facebook pour s'inscrire
 
 ## Libraries utilisées
 
